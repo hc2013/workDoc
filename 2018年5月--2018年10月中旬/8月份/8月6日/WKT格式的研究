@@ -1,0 +1,184 @@
+在4D坐标（x,y,z,m)中，m是一个线性参照系统的值
+
+目测已有Type
+
+POINT
+
+POLYGON
+
+==============================================================================
+对Point的测试，无非只有2种，二维和三维
+	在SDO_ELEM_INFO中，(1，1)表示Point type,(1,0)表示的是一个对Point的Orientation(指向）
+
+SDO_GEOMETRY.ST_IsValid
+16:43 验证得这个Function可以执行，返回结果和预期相同
+
+	1.对于2D的Point,裸点类型，已经证明WKT是正常的
+	2.构造3D Point的SDO
+		3001,NULL,NULL
+		INSERT INTO countries VALUES(9,'Hotland',SDO_GEOMETRY(3001,NULL,SDO_POINT_TYPE(12, 14, 18),NULL,NULL),NULL);
+		valid验证通过
+		inceptor测试通过
+		Point====>Point
+
+	3.Point Cluster:点群测试
+		3.1 二维点群
+		INSERT INTO countries VALUES(10,'Laowo',SDO_GEOMETRY(2005,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,3),sdo_ordinate_array
+			(12,14,14,16,18,19)),NULL);
+		valid通过
+		inceptor通过
+		MULTIPOINT(2005)=====>MULTIPOINT
+
+	
+		3.2 三维点群
+		INSERT INTO countries VALUES(11,'YueNan',SDO_GEOMETRY(3005,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,3),sdo_ordinate_array
+(11,12,14,13,14,15,16,18,19)),NULL);
+		valid通过
+		inceptor通过
+		MULTIPOINT(3005)=====>MULTIPOINT	
+		
+	4.Line String
+		2维直线（Straight Line)
+		INSERT INTO countries VALUES(12,'JianPuzhai',SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,1),sdo_ordinate_array(11,12,14,15)),NULL);
+		valid通过
+		inceptor通过
+		Line(2002)=====>Line String
+		
+		2维曲线（Curve)
+			INSERT INTO countries VALUES(13,'ChaoXian',SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2),sdo_ordinate_array(11,12,12,15,15,16)),NULL);
+		valid通过
+		inceptor通过
+		Curve Line(2002)=====>CIRCULARSTRING
+		注意，这里的（1,2,2）指定了曲线，如果坐标中的三个点是直线，Validdate是无法通过的
+		Inceptor测试通过
+		
+		2维曲线（2段）
+		INSERT INTO countries VALUES(14,'HanGuo',SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2，7,2,2),sdo_ordinate_array(11,12,12,15,15,16，17,18,16,20)),NULL);
+		valid通过，还是一样的问题，Oralce 会对直/曲进行验证，
+		Inceptor测试未能通过，对于第二段的，WKT解析时发生缺失
+			这种情况，可能是WKT对连续2段曲线有其他的理解方式，有可能是这样
+	
+		突然想到，之前的测试中，是有插入过Compound Line String的，当时是成功的
+			现在尝试改用Compound Line String，看能不能完成相同信息的插入
+		错误！！！！！，无论是Oracle还是WKT，对于Compound（复合）的理解，都是直线&&曲线并存，而不是多段，单种
+		cid=14之所以验证失败，是因为两段曲线的链接，只需要一组坐标偏移就好，头尾点重合，不需要再为之后的每一个点单独规定offset
+		因此，正确的写法是
+		INSERT INTO countries VALUES(14,'HanGuo',SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,2,2),sdo_ordinate_array(11,12,12,15,15,16,17,18,16,20,21,21,24,25)),NULL);
+		valid通过，Inceptor通过
+		（以上是三段曲线）
+		
+		Curve Line(2002)=====>CIRCULARSTRING
+			综上，可以看出，Oracle的2002-2-2并不会去理会这条曲线有多少段，只要坐标连续，头尾详解,没有把直曲混合一起就行了
+	
+
+           5.NURBS curve的验证
+		Oracle 官网提供的NURBS EXAMPLE竟然没法通过Valid!!
+		喜人的是，WKT竟然支持NUMRBSCURVE这种格式！
+			但是既然不能通过valid,也就无法判断其数据是否有丢失
+				不过看起来信息还是很全的，此处应该可以认为OK的
+		INSERT INTO countries values(
+  16,'QiliMazhaluo',SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1, 2, 3),SDO_ORDINATE_ARRAY(3,7,0, 0, 1,-0.5, 1, 1,0.2, 2, 1,0.5, 3.5, 1,0.8, 2, 1,0.9, 1, 1,0.3, 0, 1,11,0, 0, 0, 0,  0.25, 0.5, 0.75, 1.0, 1.0, 1.0, 1.0)),NULL);		
+
+
+
+	   6.SimplePolygon验证(直线构成的Polygon)
+		valid验证通过，Inceptor验证通过
+		INSERT INTO countries2 values(17,'MaiJia',SDO_GEOMETRY(2003, NULL, NULL, SDO_ELEM_INFO_ARRAY(1, 1003, 1), SDO_ORDINATE_ARRAY(11, 12, 12, 13, 15, 16, 17, 18,11, 12)),NULL);
+
+	   7.Polygon with circular arcs(曲线构成的Polygon)
+		Insert INTO countries VALUES(18,'MoLuoge',SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY
+			(1,1003,2),SDO_ORDINATE_ARRAY(1,1,2,3,5,7,3,9,1,1)),NULL);
+		Inceptor通过
+			CURVEPOLYGON (CIRCULARSTRING (1.0 1.0, 2.0 3.0, 5.0 7.0, 3.0 9.0, 1.0 1.0))
+	   8.Rectangle type
+		之前已经通过Inceptor测试
+		INSERT INTO countries VALUES(19,'MolangBike',SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY(1,1, 5,7)),NULL);
+
+
+           9.Circle type(圈）
+		Insert INTO countries VALUES(20,'Bilishi',SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY  
+                     (1,1003,4),SDO_ORDINATE_ARRAY(2,1,3,0,4,1)),NULL);
+		Inceptor通过
+		注意，这里的WKT是将Circle type转化成一个CurvePolygon(曲边多边形）
+			再Oracle中只需要3个点标示一个圆圈，WKT则会补充为4个点（自计算）
+
+	    10.Compound line string
+		之前已经测过，能通过Inceptor测试
+			CompoundLineString======>COMPOUNDCURVE
+
+            11.Compound Ploygong
+		官方 Example测试过，能通过Inceptor测试
+			Compound Ploygong=====》CURVEPOLYGON
+
+	    12.Surface
+		 构造不成功，搁置
+	
+	    13.Solid
+		搁置
+	
+
+	    14.Collection结合类型（DL04)
+		14.1 单点+直线（测试通过）
+			Collection====》GEOMETRYCOLLECTION
+		14.1 单点+直线+直边多边形
+			valid通过，inceptor报错
+			查看jar包内部代码
+			！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+			发现bug
+			Insert INTO countries VALUES(23,'GelunBiYa',SDO_GEOMETRY(2004,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,1,3,2,1,7,1003,1),SDO_ORDINATE_ARRAY(1,1,3,4,5,6,2,0,3,3,5,4,2,0)),NULL);
+			以上这个Collections(Point+Line+Polygon）类型，再Oracle的valid是不能通过的，但是却可以被WKT.jar正确转为WKT格式，数据不发生丢失，但如果把1003改成2003,那么Oracle中的valid可以通过，但是WKT转换直接报错
+			初步认为，这是一个bug，如果可以更改jar包中的代码，那么这个错误可以非常简单地消除，但是不清楚会不会有其他问题
+			
+			再进行一次Simple Polygon的测试，发现，当单体Polygon的时候，必须使用1003
+			再对Polygon with a hole进行测试，发现外部exterior必须是1003,而interrior，也就是内部Polygon要用
+		2003，而在Collection中，确实应该是个2003,而jar包中代码只switch了一个2003
+			
+		
+	15.MULTIPOINT(多点测试）
+		就是Point Cluster，之前已经测试2维和3维点群
+	
+	16.MULTILINE
+		INSERT INTO countries VALUES(26,'Riben',SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRA
+	Y(1,2,1,5,2,1),SDO_ORDINATE_ARRAY(2,4,4,3,5,5,8,0)),NULL);
+		Inceptor测试通过,valid通过
+		MULTILINE=======》MULTILINESTRING
+	
+	17.MultiCurve
+		INSERT INTO countries VALUES(27,'LiBiya',SDO_GEOMETRY(2006,NULL,NULL,SDO_ELEM_INFO_ARRA
+ 		Y(1,2,2,7,2,2),SDO_ORDINATE_ARRAY(2,4,4,3,5,5,8,0,8,7,10,6)),NULL);
+		
+		Inceptor测试通过,valid通过
+		MULTICurce=======》MULTICURVE (CIRCULARSTRING (2.0 4.0, 4.0 3.0, 5.0 5.0), CIRCULARSTRING (8.0 0.0, 8.0 7.0, 10.0 6.0))
+
+
+	18.MultiPolygon
+			
+今天先完成2维几何体的测试
+
+
+============================================================================================================
+Line String是直线或者曲线的组合，
+
+NURBS(non-uniform ralational B-spline) curve
+	非均匀有理B样条,NURBS曲线和NURBS曲面在传统的制图领域是不存在的，是为使用计算机进行3D建模而专门建立的
+
+一个Surface是包含多个Polygon的集合，每一条边不能被超过两个多边形共享
+	而且Surface必须是三维的，Surface没有容积！但是有表面积
+
+Solid是一个方体，有内容积
+	一定有外表面，内表面可能有，也可能没有
+
+OK，自构造Surface和Solid，进行测试
+
+官方文档存在一定的自我矛盾，一方面说Surface必须是三维的
+而DLTT中却有2003指Surface的可能
+
+
+
+
+
+
+
+
+
+

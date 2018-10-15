@@ -1,0 +1,15 @@
+abstact class Codec
+	对Inverted index segment进行encode/decode
+
+	SegmentReader===>CodecReader===>LeafReader	
+
+
+Java SPI:
+	Java自带的服务发现机制，将接口的实现类在src/META-INF/services/***.***.***中注册，即可让ServiceLoader.load（）发现
+	
+	这个功能最好的地方，是可以再代码外部改变代码的运行行为
+
+基于Iterator的好处就是
+	如果其内部的数据结构发生了变化，接口确实可以不变的，即对外隐藏数据结构
+
+

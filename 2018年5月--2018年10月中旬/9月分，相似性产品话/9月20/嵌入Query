@@ -1,0 +1,11 @@
+1.在org.elasticsearch.common.lucene.search
+	这个包里，加入新的Query
+
+	MoreLikeThisInOrderQuery
+		
+	rewriteQuery已经完成
+
+2.在org.elasticsearch.index.query这个路径下加入MoreLikeThisInOrderQueryBuilder
+
+	public ***Builder(StreamInput in) throws IOException
+		这个方法是从stream中初始化这个QueryBuilder

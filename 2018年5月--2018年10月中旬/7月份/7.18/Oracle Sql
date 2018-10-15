@@ -1,0 +1,3 @@
+获取Oracle版本号
+SELECT * FROM V$VERSION
+	

@@ -1,0 +1,10 @@
+dvd,dvm==>docvalue
+
+termVector==>tvf,tvx,tvd
+
+fnm,fdx,fdt
+
+.tii,.tis
+
+.tii就是它的索引文件
+.tis文件用于存储分词后的词条（Term）

@@ -1,0 +1,38 @@
+Oracle RAC
+	Real Application Cluster:实时应用集群
+	
+	集群实例：
+		实例是一个Process+Memory的概念，系统运行时概念
+		RAC就是一个数据库对应多个实例
+	
+	SID=INSTANCE_NAME是用来唯一标示实例的
+	而Service Name则是用来标示数据库的
+		SID====>Instance
+		Service Name====>DataBase
+
+	JDBC连接ORACLE的方法由三种：
+		格式一：jdbc:oracle:thin:@//<host>:<port>/<service_name>    ==============可以对应利用多个实例的资源
+		格式二：jdbc:oracle:thin:@<host>:<port>:<SID> 		    ===============只能使用一个实例的资源
+		格式三：jdbc:oracle:thin:@<TNSName>                         ===============
+
+db_name:单机下，db_name就是就是一个Oracle，DataBase的唯一标示
+db_name.db_domain:集群下，对一个数据库的唯一标示（db_domain类似与及其名字）
+
+DB_UNIQUE_NAME:同一个数据库的主库和备用库的db_name.db_domain是相同的
+	DB_UNIQUE_NAME是用于区分这两个实体的
+
+
+显示实例名字(服务名）
+	show parameter instance_name（service_names）;
+
+修改实例名
+	alter system set instance_name=test_instance scope=spfile;
+			  service_names=test_service.mydb
+
+
+
+
+
+
+
+

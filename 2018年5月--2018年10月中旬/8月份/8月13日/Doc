@@ -1,0 +1,45 @@
+oracle_2_wkt.jar说明文档
+
+主要功能：实现Oracle数据表中地理数据（SDO_GEOMETRY)，向Inceptor ES表中的导入功能
+
+实现机制：基于JDBC读写和Oracle Spatial.util包对WKT格式的转换
+
+使用方法：命令行使用,2中方式
+	
+	1.全命令行参数,共有11个参数，命令会很长
+		java -jar -in_uri [jdbc_uri] -in_user [username] -in_password [password] -in_table_name [tablename] -in_cols [input columns] -out_uri [jdbc_uri] -out_user [username] -out_password [password] -out_table_name [table_name]  -out_cols [out columns] -generate_pk [yes|no]
+	
+	示例
+         	java -jar -in_uri jdbc:oracle:thin:@172.16.3.121:1521:XE -in_user system -in_password oracle -in_table_name countries -in_cols cid,name,part1,part2 -out_uri
+jdbc:hive2://172.16.3.124:10020/hcdb -out_user hc -out_password 123  -out_table_name hc_countries_table -out_cols cid,name,part1,part2 -generate_pk yes;
+
+	由于导入数据是在两个数据库的两张表之间进行，因此需要两张的URI,数据库名，表名，以及列数组，以及数据的用户名和密码，这些参数都无法省略。
+	这种命令行全参数的形式，很容易因为疏忽写错，不建议使用
+
+	2.properties配置文件
+	可以在运行命令的时候，以-f [path] 的方式指定properties文件的位置，实现参数的配置
+
+	示例
+ 		java -jar oracle_2_wkt.jar -f test.properties
+	
+	properties文件示例
+		in_uri=jdbc:oracle:thin:@172.16.3.121:1521:XE
+		in_user=system
+		in_password=oracle
+		in_table_name=countries
+		in_cols=cid,name,part1,part2
+
+		out_uri=jdbc:hive2://172.16.3.124:10020/hcdb
+		out_user=123
+		out_password=123
+		out_table_name=hc_countries_table
+		out_cols=cid,name,part1,part2
+		generate_pk=yes;//是否生成ES主键
+
+
+功能限制：
+	Oracle中SDO_GEOMETRY对于集合体Type的划分是十分细致的，其种类，多于WKT语义涵盖的种类，因此，在该命令行的转换功能中，转换出的WKT结果,和ORACLE数据库中的SDO_GEOMETRY是存在内容
+		差异的。在对Oracle中8种常见的几何体类型进行测试之后，得出测试结果如下
+
+
+

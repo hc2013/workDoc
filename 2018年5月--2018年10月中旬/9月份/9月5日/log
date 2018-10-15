@@ -1,0 +1,6 @@
+NewMoreLike中已经集成了FuzzyQuery
+	
+10：32发现NewMoreLikeThis中已经做了关于句子检测的部分
+	新建NewMoreLikeThis_For_FuzzyTerm
+
+10:53 经过调整，效果确实变好了一些，但是分词器仍然可以继续优化

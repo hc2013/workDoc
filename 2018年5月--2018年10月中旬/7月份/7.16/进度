@@ -1,0 +1,21 @@
+编译完成Proj4
+	安装之后的文件在/usr/local下面，其中bin下面存放可执行程序，include存放源代码，lib下存放lib库；同时将/usr/local/lib加入到/etc/ld.so.conf配置文件中，使用ldconfig命令动态装入链接库
+
+./configure这个东西，到底是个什么贵？怎么搞得/
+
+SWIG (Simplified Wrapper and Interface Generator) ，即简化包以及接口生成器，为脚本语言(tcl，perl，python等)提供了C和C++的接口。
+
+/opt目录一般用于存放用户自己安装的源码软件
+
+PROJ是一种通用坐标转换软件，可将地理空间坐标从一个坐标参照系（CRS）转换为另一个坐标参考系
+
+
+Oracle数据库的show tables功能
+	select table_name from user_tables;
+
+Oracle 一个实例，就是一个数据库， 所以，没有对应的 show databases 语句
+
+
+
+
+

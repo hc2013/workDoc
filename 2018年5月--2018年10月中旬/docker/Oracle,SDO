@@ -1,0 +1,61 @@
+一.
+Oracle SDO的关键是SDO_GEOMETRY这个结构.这是“列”的一个配置项目
+	这其实是一个Obejct,嵌套了其他SDO的Object
+
+	2003是SDO_GEOMETRY的第一个参数，目前可以肯定，这是指定一个2-dim，polygen
+
+	SDO_ELEM_INFO_ARRAY，定义了Polygen的属性，“矩形”，“梯形”,等
+
+	SDO_ORDINATE_ARRAY:坐标点的数组
+
+	
+
+每次新添加一张包含SDO的表之后，要更新user_sdo_geom_metadata这张元数据表
+	配置新表中的那几列是SDO，以及SDO的配置
+
+Spatial Index,空间索引，是加载一张Table的SDO列上，只在SDO列上
+	INDEXTYPE IS MDSYS.SPATIAL_INDEX
+
+对于两个图形见的并，交，差等操作，一般是针对sdo_table中的一些行，对于特定的行
+	使用name="***"来指定
+
+二. Spatial and graph
+	MDSYS，模式，规定了数据结构和语法
+	空间索引机制
+	区域的运算
+	GeoRaster
+
+	Spatial和Graph支持用于表示几何的对象关系模型。
+	此模型将整个几何图形存储在矢量数据SDO_GEOMETRY的Oracle本机空间数据类型中。
+	Oracle表可以包含一个或多个SDO_GEOMETRY列
+
+三.
+	由于最大SDO_ORDINATE_ARRAY大小为1,048,576个数字，
+	因此SDO_GEOMETRY对象中的最大顶点数取决于每个顶点的维数：两个维度为524,288，三维为349,525，四维为262,144
+
+
+	××××××××××××××××××××××
+	SDO_GTYPE属性指示几何的类型，有效几何类型对应于OGIS Simple Features for SQL规范的几何对象模型中指定的几何类型（Surfaces除外）	数值与OGIS规范中给出的值不同，但在适用的名称和语义之间存在直接对应关系。
+	××××××××××××××××××××××
+
+	SDO_GTYPE值为DLTT格式的4位数，DLLT
+	SDO_SRID属性可用于标识与几何体关联的坐标系
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

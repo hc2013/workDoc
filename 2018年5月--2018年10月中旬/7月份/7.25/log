@@ -1,0 +1,71 @@
+9:20
+	序列化测试，standard,raf,kryo
+
+	测试结果难以接受，即读写速度的标准到底是怎样的，是只考虑读写的时间？还是所有相关的初始化，关闭都考虑进来？
+
+	暂时搁置
+
+==============================================================================================================
+
+10：55
+	确定GeoJson的方案说法（DB_Test)
+	1.现有的SDO_API中没有直接转GeoJson的办法
+	2.Oracle11中的SDOUtil也不支持直转GeoGson
+	3.后续若真的需要，可以手写代码
+
+	WKT,WKB格式都是成功的(DB_TEST_for_jdbc_getWKBT)
+	一个小细节：WKT格式下，将一个矩形的四个顶点的坐标都显示出来了
+
+	shapeFile的定量导入问题(Test_Oracle_Shp)
+		目前只有shapeFile这条路是直接做全量转化，因此需要控制转换量，以避免磁盘爆满
+
+=======================================================
+结局分批量导出shapeFile的需求
+	1.获取一张表的主键
+		select col.column_name from user_constraints con,user_cons_columns col where con.constraint_name=col.constraint_name
+			and con.constraint_type='P' and col.table_name='cola_markets';
+
+	2.获取主键方法2
+		SELECT cols.table_name, cols.column_name, cols.position, cons.status, cons.owner
+			FROM all_constraints cons, all_cons_columns cols
+			WHERE cols.table_name = 'TABLE_NAME'
+			AND cons.constraint_type = 'P'
+			AND cons.constraint_name = cols.constraint_name
+			AND cons.owner = cols.owner
+			ORDER BY cols.table_name, cols.position;
+======================================================================================
+Oracle表自带rownum这列，可以直接做范围检索，这样就简单多了!
+
+直接使用DataSource.copyLayer()
+就可以将数据写进去了，我擦，真他妈简单
+
+=======================================================================================
+寻找样式数据，测试路线正确
+World Sample NAVTEQ data for Oracle Spatial 
+	世界数据，什么个鬼，很大
+
+San Diego Sample
+
+=============================================================================================
+先尝试自制数据吧
+	sql自制数据比较麻烦
+	sql脚本：循环结构,loop
+		1.for loop
+		BEGIN 
+    			for i in 1000..1100 loop
+        			INSERT INTO cola_markets2 VALUES(i,'cola_zll',SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY(1,1, 5,777)));   
+    			end loop;
+		END;
+===================================================================================================
+现在有几件事情
+	1.sample数据，进行路线测试
+	2.images,环境的配置
+	3.整合代码为工具，和环境搭配
+	4.文档整理
+	
+		
+
+
+	
+
+

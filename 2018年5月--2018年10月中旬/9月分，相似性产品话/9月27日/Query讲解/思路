@@ -1,0 +1,42 @@
+1.ES Client调用Query的形式是
+	client().prepareSearch("test_index").setTypes("countries").setQuery(moreLikeThisInOrderQueryBuilder).get();
+
+	这里的SetQuery()的参数，是一个ES的QueryBuilder
+	因此，要新增Query，必须新增一个外包装的QueryBuilder
+
+2.自定义QueryBuilder,需要AbstractQueryBuilder<MoreLikeThisInOrderQueryBuilder>
+	关于这个Builder需要做到的修改是
+
+	1.属性的get/set方法，如果需要对外，那么当然要提供
+	2.构造方法，其中有一个必须的构造方法 public(StreamInput input)
+		这个方法实现起来其实非常简单，直接调用StreamInput的read方法就可以，只是要对应doWriteTo()方法的write顺序
+		其他的重载方法可以根据需要自定义
+
+	3.doWriteTo(SteamOutput out)
+		这是向输出流中写入参数的方法，必须重写，否则CS两端不能通信
+	4.doToQuery
+		生成Query的方法，这个当然要重写了
+
+	4.doXContent
+		这个方法，是在SendRequest==>构造SearchRequest的时候，将QueryBuilder转为Json对象的方法
+	5.fromXContent
+		而在SearchModule的registerQueryParsers（）中，会对Query进行注册
+			所有的Query都在此处注册，才能被client找到
+			这里需要构造自定义QueryBuilder的fromContent方法和new方法
+	6.doEquals(),doHashCode(),getWritableName()，这三个常规方法
+
+
+=======================================================================
+关于分词器的注册
+	Node====》AnanlysisModule==>注册Tokenizer，Analyzer
+		setupTokenizers()
+		setupAnalyzers()
+
+关键类，QueryShardContext
+	IndexAnalyzer,是在run()的过程中，init QueryShardContext时候，mapperService的初始化时赋值的
+============================================================================
+
+		
+=============================================================
+
+

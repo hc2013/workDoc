@@ -1,0 +1,84 @@
+sqlplus system/oracle@172.16.3.121/xe
+	简易连接成功
+
+/u01/app/oracle/product/11.2.0/xe/network/admin
+	这个目录下，有tnsnames.ora和listener.ora
+-----------------------------------------------------------------------------------
+在这个目录下
+	/u01/app/oracle/product/11.2.0/xe/bin
+	运行：lsnrctl start
+	显示：Listener using listener name LISTENER has already been started
+----------------------------------------------------------------------------------
+(SID_LIST =
+    (SID_DESC =
+      (SID_NAME = PLSExtProc)
+      (ORACLE_HOME = /u01/app/oracle/product/11.2.0/xe)
+      (PROGRAM = extproc)
+    )
+)
+该段用于定义监听器的服务 即为哪些数据库实例提供监听服务
+------------------------------------------------------------------------------------
+SQLNET.AUTHENTICATION_SERVICES=(NTS)是WINDOWS系统专用的
+
+-------------------------------------------------------------------------------------
+SQL> show parameter password
+	remote_login_passwordfile	     string	 EXCLUSIVE
+----------------------------------------------------------------------------------
+/etc/hosts的作用
+-------------------------------------------------------
+DBA role.
+=------------------------------------------------
+select * from v$pwfile_users;
+-------------------------------------------------------------------
+you can not startup or shutdown the database with DBA role. You need to be SYSDBA or SYSOPER in order to startup or shutdown
+必须以SYSDBA的身份登录，才能startup和shutdown?
+
+--------------------------------------------------
+使用orapwd命令生成口令文件之后，密码文件的认证方式测试本地登录，链接成功，并startup
+orapwd file=/u01/app/oracle/product/11.2.0/xe/dbs/orapwlunar password=oracle entries=10
+sqlplus 'sys/oracle as sysdba'
+SQL> startup
+
+----------------------------------------------------------------
+在客户端的Oracle_home下新建network/admin
+将tnsname.ora拷贝到客户机上
+修改ip和port
+运行命令
+sqlplus system/oracle@xe
+链接成功！！
+-------------------------------------------------------------
+13点39分：第一次生成shapeFile，此时数据库中的表是空的，没有数据
+ogr2ogr -f "ESRI Shapefile" success.shp OCI:system/oracle@xe -sql "SELECT* FROM COLA_MARKETS" -progress
+
+--------------------------------------------------------------------
+发现问题所在，要在OCI路径后面，加冒号，加表名，才能顺利导出，否则，将会扫描整个数据库中的所有表
+命令如下：
+	ogr2ogr -f "ESRI Shapefile" new_success.shp OCI:"system/oracle@xe:COLA_MARKETS"
+	这个命令将会生成对应的三个对应文件，PerFect
+代码端：
+	Driver driver=ogr.GetDriverByName(driverName);
+        System.out.println("Oracle Driver="+driver);
+        String uri="OCI:system/oracle@xe:COLA_MARKETS";
+        DataSource ds=driver.Open(uri,0);
+        System.out.println("ds="+ds);
+        //ds.ExecuteSQL("SELECT* FROM COLA_MARKETS");
+
+
+        Driver driver1=ogr.GetDriverByName("ESRI Shapefile");
+        String outFile="./newShape.shp";
+        driver1.CopyDataSource(ds,outFile);
+	将会看到完美的shp文件被输出
+	此处注意:Oracle可能存在延迟写的问题，从而不会把更新立即体现出
+
+
+
+
+
+
+
+
+
+
+
+
+

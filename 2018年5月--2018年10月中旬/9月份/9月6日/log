@@ -1,0 +1,12 @@
+11点41分，在ES源码工程中，复制出文件夹plugins/elasticsearch-analysis-sp
+	 这里sp=sentence split
+
+
+12点05分
+	
+
+=========================================================================================
+16点33分
+	新建Maven工程io.transwarp.ds:ArticleSimilarity
+
+转移整个一期工程

@@ -1,0 +1,30 @@
+1.覆盖AbstractQueryBuilder的doWriteTo()
+
+
+
+
+
+================================================================
+TransportClient中的Query注册
+
+	在TransportClient的构造时，会初始化各个Module(NetworkModule,ActionModule)
+		这部分就包括SearchModule,
+			而在SearchModule的registerQueryParsers（）中，会对Query进行注册
+
+	所有的Query都在此处注册，才能被client找到
+			这里需要构造自定义QueryBuilder的fromContent方法和new方法
+========================================================================================
+由于Server端在接收到Client端的流数据之后，是以StreamInput的方式构造Builder的
+	因此，必须实现参数为StreamInput的构造方法
+=========================================================================================
+因为在Server端的QueryPhase阶段要首先CreateContext，这一步要调用QueryBuilder.doToQuery()
+	因此必须重写QueryBuilder的这个方法
+
+============================================================================================
+关于分词器在代码中的注册，可以看AnalysisModule这份代码，照葫芦画瓢即可
+=====================================================================
+
+
+
+
+	

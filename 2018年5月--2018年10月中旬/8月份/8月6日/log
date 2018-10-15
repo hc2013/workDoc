@@ -1,0 +1,47 @@
+11点20,发现Oracle 官方Geometry测试数据，有2维的，也有三维的
+
+上周五自构建的数据已经整理完了，脚本先保存到/home/sql/18-08-06-test-sql.sql中，暂时搁置，去测试官方的那份数据
+	导入sql，valid，也要比对这份数据的测试完整性，不过从现在来看，32条数据总是还可以的
+
+11点29,数据导入成功,测定
+
+目测2维数据，比较全面，先做代码转换测试
+
+
+=============================================================================================================
+3点32,将32数据导出为shpfile
+再导入Inceptor
+
+在/tmp/geotools-transwarp中上传3个shp文件，生成表格table_test_shp
+
+在转shpfile的过程中，出现Error
+ERROR 1: Attempt to write non-multipoint (POLYGON) geometry to multipoint shapefile.
+难道ShpFile 中的文件是以文件为一个集合的？
+==================================================================================================================
+关于shapeFile的研究
+1.The shapefile format is a digital vector storage format for storing geometric location and associated attribute information.
+	以数字矢量格式存储地理位置和相关的属性信息
+
+2.不能存拓扑信息
+	It stores the data as primitive geometric shapes like points, lines, and polygons。
+		基本的几何图形+相关于每个shape的数据属性=几何数据
+
+3.Shp
+	The Binary file consist of a single fixed-length header followed by one or more varriable
+
+ShapeFile采用一个固定长度的header和若干个变长record组成
+	每一个变长record包含以额record-header 和一个record-contents
+
+All the non-null shapes in a shapefile are required to be of the same shape type.
+	一个shapeFile中的所有非空的形状应该属于同一个shape type
+
+也就是说，三个不同type的几何体将会被存储在3个分开的数据集中
+
+shapefile不能存储拓扑信息
+
+=========================================================================================================================
+在git上新建项目
+
+
+
+

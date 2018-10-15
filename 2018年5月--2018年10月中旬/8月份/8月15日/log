@@ -1,0 +1,7 @@
+1.expdp 离server测试
+
+docker重命名
+	docker tag 172.16.202.1/transwarp/oracle-xe-11g:hc0814 172.16.1.41:5000/zywei/transwarp/oracle-xe-11g:hc0814
+
+docker导出镜像文件
+	docker save -o oracle_image.tar 172.16.1.41:5000/zywei/transwarp/oracle-xe-11g:hc0814

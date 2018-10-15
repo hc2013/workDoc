@@ -1,0 +1,59 @@
+cfs,cfe文件是“复合索引格式”
+
+在IndexWriterConfig中的属性UseCompoundFile，只有这个属性为true时，才是使用复合索引格式来保存索引，这个属性默认为true
+	只有这个属性为true时，才会以segment为单位出现cfs，cfe文件，而不会出现其他格式的文件
+
+在100w数据的Index实验中，这个属性对于Index的时间几乎没有影响（25339ms,25125ms）
+
+在使用cfs,cfe的情况下，index size=289330551，index time=25125ms
+
+在不使用cfs,cfe的情况下，index size=289327503，index time=25339ms
+
+由以上数据可知，是否使用Compound File，对于Index Size，Time基本上没有影响
+而且两种模式的segment count也是一样的
+
+文件外在形式的最大区别在于，不使用compound会产生很多的各种各样的文件
+	在使用Stored,TermVectors，Tokenized的情况下，
+	每个segment需要9个文件来描述，
+	.fdt,.fdx,.fnm,.si,.tvd,.tvx,.doc,.tim,.tip
+
+
+在stored=false的情况下，time=24570，size=268145519
+			可以看出size有一定的减小
+			但是.fdt，.fdx,.fnm文件仍然存在，但是这几种文件的size有明显的减小
+			也就是无论开不开option,文件总是存在的，只是大小不同而已
+
+	
+			经过进一步实验，当store=false的时候，只有fdx，fdt的size变小，而其他文件包括.fnm的size都没有变化
+			这也验证了.fnm是FieldName的说法
+
+在storeTermVectors=false的情况下
+			tvx,tvd这两个文件压根就不再出现！
+
+同样再IndexOption=None的时候，
+			.doc，.tim,.tip这三个文件也不会出现了！
+	
+			
+
+
+遇到的问题，
+	StringField+DOCValue.Binary插入失败
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

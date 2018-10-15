@@ -1,0 +1,15 @@
+Term vectors are stored using two files
+	a data file where terms, frequencies, positions, offsets and payloads are stored,
+    	an index file, loaded into memory, used to locate specific documents in the data file. 
+
+TermVector存储了Term,freq,pos,offset和payload
+
+它使用文件A和文件B,共同作用，其中文件A作为文件B的doc位置索引。
+	具体文件格式可能随版本而动
+
+经过测试：storeVectors=1,而payload,offset,pos都为0,time=21590.5922
+	 storeVectors=0,而payload,offset,pos都为1,time=21805.4898
+
+	 由此推测termvector默认存储了term和freq，而且这两个是大头
+
+综上，猜测，TermVector应该是一个Term===>DOC(freq,offset,pos,payload)的映射

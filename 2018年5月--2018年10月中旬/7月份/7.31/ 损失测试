@@ -1,0 +1,47 @@
+1.Rectangle==========>POLYGON
+	类型模糊，但坐标没有损失
+
+2.Polygon with a Hole===========>POLY
+	类型模糊，坐标没有损失
+	POLYGON ((2.0 4.0, 4.0 3.0, 10.0 3.0, 13.0 5.0, 13.0 9.0, 11.0 13.0, 5.0 13.0, 2.0 11.0, 2.0 4.0), (7.0 5.0, 7.0 10.0, 10.0 10.0, 10.0 5.0, 7.0 5.0))
+
+3.Compound Line ==============>COMPOUNDCURVE
+	发生类型变换
+	这种情况下，Oracle_Spatial中的ELEM_INFO这个数组是完全损失的
+		但WKT显然是解析了ELEM_INFO中的数据，将其划分为
+		Linestring+CIRCULARSTRING（直线+环线）的这种形式
+		详见截图
+	坐标没有损失
+
+4.compound polygon===============>CURVEPOLYGON
+	组合式的多边形也没有坐标损失
+	插入之前：SDO_ORDINATE_ARRAY(6,10, 10,1, 14,10, 10,14, 6,10)
+	插入之后：WKT:(COMPOUNDCURVE ((6.0 10.0, 10.0 1.0, 14.0 10.0), CIRCULARSTRING (14.0 10.0, 10.0 14.0, 6.0 10.0)))
+	综合上一个Compound Line能够看出，WKT将复合元素分为直曲两部分
+
+5.Point====>Point
+	裸点类型，并没有损失
+
+
+￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥
+6.Oriented Point==>Point
+	指向点类型，完全失去了Vector坐标，而只被当作是普通的点，这里发生了逻辑错误，导入后的数据不能还原出原数据
+	(12,14, 0.3,0.2) =======>(12,14)
+
+
+7.Type 0 (Zero) Element====>POLYGON
+	(6,6, 12,6, 9,8, 6,10, 12,10, 6,4, 12,12)====>((6.0 4.0, 12.0 4.0, 12.0 12.0, 6.0 12.0, 6.0 4.0))
+	坐标损失巨大，发生严重逻辑错误，WKT只识别出外围的一个矩形框而已
+
+	补充一下什么是Type0,以下为官方文档原文
+		Type 0 (zero) elements are used to model geometry types that are not supported by Oracle Spatial and Graph
+		Type 0 elements are not indexed by Oracle Spatial and Graph, and they are ignored by spatial functions and procedures.
+￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥
+
+8.Three-Dimensional Geometry=====>POLYGON
+	三维几何元素被WKT看作是POLYGON，类型被模糊，但是没有坐标损失
+
+
+
+
+

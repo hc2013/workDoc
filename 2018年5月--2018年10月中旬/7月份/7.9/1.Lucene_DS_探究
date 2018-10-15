@@ -1,0 +1,33 @@
+Stored结构
+	Stored再lucenne内存中是以Document的形式存在
+	Document
+		------fields(ArrayList)
+			-----Field	
+				------FieldType
+				------FieldName
+				------FieldData
+
+	debug截图，请见截图1
+
+
+DOCValue结构
+
+	DocValue结构是通过LeafReader.get***DocValues(field)来获取的
+		getBinaryDocValues的返回值是BinaryDocValues
+			即返回所有的BinaryDocValue的列存结构
+			其中包含一个binaries数据结构，这是一个hashmap，	
+			key是FieldName
+			value是一系列的docValue元数据，用于描述DocValue在磁盘文件中的偏移量和数量
+			也就是说，BinaryDocValues.get方法，是临时到disk中去搜索对应id的docvalue
+				这个结构中有一个ByteBufferInput，这也可能是缓存实现
+
+	DocValueType的不同枚举值的具体含义和作用？
+		Binary,Numeric,Sorted,SortedSet
+
+	Binary,Numeric都是正常的，以docid作为排序依据，其内容是Binary或int的
+
+	*************Sorted,SortedSet
+	这两个玩意儿，有点奇怪，和想象的好像不大一样，需要进一步的实验
+
+	
+		

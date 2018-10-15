@@ -1,0 +1,5 @@
+Gdal.ogr  ==>proj4  ===swig  ===pcre
+
+关于卸载冲突版本的gdal处理方法是删除
+	/usr/lib及其所属目录下的所有gdal相关文件、
+	find /usr/local -name '*gdal*' | xargs sudo rm -rf

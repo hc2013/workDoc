@@ -1,0 +1,33 @@
+SQL四种语言
+	DDL(Data Definition Language,数据定义语言）
+		CREATE,ALTER,DROP,TRUNCATE,COMMIT,RENAME
+	
+	DML(Data Manipulation Language,数据操纵语言)
+		SELECT,INSERT,UPDATE,DELETE,MERGE,CALL,LOCK TABLE,EXPLAIN PLAN
+
+	DCL(Data Control Language,数据控制语言)
+		GRANT(授权），REVOKE(取消授权）
+
+	TCL(Transaction Control Language,事物控制语言)
+		SAVEPOINT 设置保存点
+		ROLLBACK 回滚
+		SET TRANSACTION	
+
+=====================================================================================
+重要概念
+
+table,view
+
+index
+
+transaction
+
+Embedded SQL
+
+
+
+
+
+
+
+

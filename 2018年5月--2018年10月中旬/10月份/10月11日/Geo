@@ -1,0 +1,12 @@
+Geo Shape
+
+Geo Point是一个经纬度的二维数据类型，也就是[lat,lon]这种格式
+
+geo-bounding box query是构建一个矩形，然后去找到落在这个矩形内部的所有geo-point
+	构造这个Query的依据，就是top_left和bottom_right，两个经纬度的点
+
+Geohash,是base32编码格式的经纬度表现形式
+	Geohash的长度越长，精度越高
+
+==================================================================================================
+geo_shape mapping geo_json geomtry objects to the geo_shape

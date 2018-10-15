@@ -1,0 +1,12 @@
+more,less都是文件浏览命令，类似于cat，比cat的功能更强大
+
+nohup命令接&，是后台运行的意思
+
+sql subQuery 都是跟在from后面的，每个subQuery后面都要跟alias
+
+show variables like '%secure%'
+
+The MySQL server is running with the --secure-file-priv option so it cannot execute the statement
+	这个问题是因为secure_file_priv变量的存在限制了输出只能再特定路径下
+
+mysql输出重定向：into outfile

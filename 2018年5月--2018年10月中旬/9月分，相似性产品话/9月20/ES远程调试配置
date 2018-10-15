@@ -1,0 +1,27 @@
+1.解决公司ES不能编译的问题
+
+   1.回退到6.0.0版本
+	git reset --hard []
+
+   2.缺少zk-test.jar
+	到公司的maven仓库上下载jar包，放到指定的路径里
+   
+   3../gradlew assemble
+	集成
+
+   4.输出结果在distribution/tar/build/distributions
+	已经编译好tar
+   
+   5.解决client包不匹配的问题，在/elasticsearch-5.4.1-transwarp/transwarp-elasitcsearch-client
+	目录下重新mvn package就好
+=========================================================================
+
+1.ElasticSearch 远程调试配置方法
+   在es的conf目录下面jvm.options中加入-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000
+		然后重启es，再在代码中开Remote 链接到8000,打断点，即可停住
+
+======================================================================================================
+
+
+
+

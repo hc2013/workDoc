@@ -1,0 +1,117 @@
+oracle_2_wkt.jar说明文档
+
+主要功能：实现Oracle数据表中地理数据（SDO_GEOMETRY)，向Inceptor ES表中的导入功能
+
+实现机制：基于JDBC读写和Oracle Spatial.util包对WKT格式的转换
+
+使用方法：命令行使用,2中方式
+	
+	1.全命令行参数,共有11个参数，命令会很长
+		java -jar -in_uri [jdbc_uri] -in_user [username] -in_password [password] -in_table_name [tablename] -in_cols [input columns] -out_uri [jdbc_uri] -out_user [username] -out_password [password] -out_table_name [table_name]  -out_cols [out columns] -generate_pk [yes|no]
+	
+	示例
+         	java -jar -in_uri jdbc:oracle:thin:@172.16.3.121:1521:XE -in_user system -in_password oracle -in_table_name countries -in_cols cid,name,part1,part2 -out_uri
+jdbc:hive2://172.16.3.124:10020/hcdb -out_user hc -out_password 123  -out_table_name hc_countries_table -out_cols cid,name,part1,part2 -generate_pk yes;
+
+	由于导入数据是在两个数据库的两张表之间进行，因此需要两张的URI,数据库名，表名，以及列数组，以及数据的用户名和密码，这些参数都无法省略。
+	这种命令行全参数的形式，很容易因为疏忽写错，不建议使用
+
+	2.properties配置文件
+	可以在运行命令的时候，以-f [path] 的方式指定properties文件的位置，实现参数的配置
+
+	示例
+ 		java -jar oracle_2_wkt.jar -f test.properties
+	
+	properties文件示例
+		in_uri=jdbc:oracle:thin:@172.16.3.121:1521:XE
+		in_user=system
+		in_password=oracle
+		in_table_name=countries
+		in_cols=cid,name,part1,part2
+
+		out_uri=jdbc:hive2://172.16.3.124:10020/hcdb
+		out_user=123
+		out_password=123
+		out_table_name=hc_countries_table
+		out_cols=cid,name,part1,part2
+		generate_pk=yes;//是否生成ES主键
+
+
+功能限制：
+	Oracle中SDO_GEOMETRY对于集合体Type的划分是十分细致的，其种类，多于WKT语义涵盖的种类，因此，在该命令行的转换功能中，转换出的WKT结果,和ORACLE数据库中的SDO_GEOMETRY是存在内容
+		差异的。在对Oracle中8种常见的几何体类型进行测试之后，得出测试结果如下
+
+
+1.Rectangle==========>POLYGON
+	类型模糊，但坐标没有损失
+
+2.Polygon with a Hole===========>POLY
+	类型模糊，坐标没有损失
+	POLYGON ((2.0 4.0, 4.0 3.0, 10.0 3.0, 13.0 5.0, 13.0 9.0, 11.0 13.0, 5.0 13.0, 2.0 11.0, 2.0 4.0), (7.0 5.0, 7.0 10.0, 10.0 10.0, 10.0 5.0, 7.0 5.0))
+
+3.Compound Line ==============>COMPOUNDCURVE
+	发生类型变换
+	这种情况下，Oracle_Spatial中的ELEM_INFO这个数组是完全损失的
+		但WKT显然是解析了ELEM_INFO中的数据，将其划分为
+		Linestring+CIRCULARSTRING（直线+环线）的这种形式
+		详见截图
+	坐标没有损失
+
+4.compound polygon===============>CURVEPOLYGON
+	组合式的多边形也没有坐标损失
+	插入之前：SDO_ORDINATE_ARRAY(6,10, 10,1, 14,10, 10,14, 6,10)
+	插入之后：WKT:(COMPOUNDCURVE ((6.0 10.0, 10.0 1.0, 14.0 10.0), CIRCULARSTRING (14.0 10.0, 10.0 14.0, 6.0 10.0)))
+	综合上一个Compound Line能够看出，WKT将复合元素分为直曲两部分
+
+5.Point====>Point
+	裸点类型，并没有损失
+
+
+￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥
+6.Oriented Point==>Point
+	指向点类型，完全失去了Vector坐标，而只被当作是普通的点，这里发生了逻辑错误，导入后的数据不能还原出原数据
+	(12,14, 0.3,0.2) =======>(12,14)
+
+
+7.Type 0 (Zero) Element====>POLYGON
+	(6,6, 12,6, 9,8, 6,10, 12,10, 6,4, 12,12)====>((6.0 4.0, 12.0 4.0, 12.0 12.0, 6.0 12.0, 6.0 4.0))
+	坐标损失巨大，发生严重逻辑错误，WKT只识别出外围的一个矩形框而已
+
+	补充一下什么是Type0,以下为官方文档原文
+		Type 0 (zero) elements are used to model geometry types that are not supported by Oracle Spatial and Graph
+		Type 0 elements are not indexed by Oracle Spatial and Graph, and they are ignored by spatial functions and procedures.
+￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥￥
+
+8.Three-Dimensional Geometry=====>POLYGON
+	三维几何元素被WKT看作是POLYGON，类型被模糊，但是没有坐标损失
+
+
+总结：一期实现了数据在两个数据库之间的导入功能，这条路径得到了验证，但是功能测试并不全面，主要是因为缺少Oracle地理类型的数据，无法对代码进行非常全面细致的测试
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

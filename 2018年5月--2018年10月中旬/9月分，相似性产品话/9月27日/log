@@ -1,0 +1,13 @@
+1.lucene的高亮有三种模式
+	highlighter,fast-vector-highlighter,posting-highlighter
+	
+	默认使用highligher,也就是plain highlighter,是将字段内容提取到内存中，进行分词进行高亮
+		对于短文本，类似于标题这种，由于减少了IO,从而能够显著提高吞吐量
+			对于长文本，由于分词耗时过多，是不合适
+
+	fast-vector高亮
+		在index中存储pos,offset这些数据，来避免实时地分词，提高速度，但是因为增加了IO操作，因此对于短文本不适合
+
+	
+
+

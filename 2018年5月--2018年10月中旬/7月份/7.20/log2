@@ -1,0 +1,63 @@
+Oracle Database 10g R2 (10.2.0.1) Express Edition (Locator) Available!!
+
+Oracle Database 10g R2 (10.2.0.1) Express Edition (Locator) Available!!
+
+
+Note:
+
+Before starting SQL Command Line, make sure that the necessary environmental variables have been set up properly. See Oracle Database Express Edition 2 Day DBA for information about setting environmental variables for SQL Command Line.
+
+================================================================================================================
+Geometry.getWKB()返回NULl的问题，经过可靠的调研，需要SQL-Developer&&GeoRapter来完成，因此开始安装SQl-Developer
+1.下载sqlcl-18.2.0.zip,并且unzip到/home/hc/SQL-Developer/sqlcl中
+这个解压版的东西，尝试直接运行./sqlcl，不成功
+
+而且这个东西和SQL-Devloper好像不是一回事,Oracle SQL Developer Command Line
+	这个应该只是Sql-Devloper的命令行工具，唉，暂时搁置
+暂时转向安装SQL Developer
+
+2.下载sql developer.rpm
+
+=====================================================================================================================
+SDO_GEOMETRY转Geo JSON
+目前发现用Gson+JGeomtry来实现SDO_Geometry转成String
+需要探求所需之jar包
+
+1.下载Oracle Spatial and Graph - Spatial Java Class API  
+	并解压到/home/hc/oracle-spatial-api 目录下
+		文件：sdoapi_12102.zip
+
+2.IDE实验
+	能够找到JGeomtry类，Ok
+
+3.下载gson-2.1.jar
+
+4.将gson-2.1.jar，oracle-spatial-api.jar导入IDE
+
+5.遇到NAN Error,使用GsonBuilder.create()即可
+	成功！！
+但这里似乎得到的是普通的Json格式，而不是GeoJson
+
+==============================================================
+发现一个ora2geojson.rar资源，先是试用一下
+解压rar包，要先安装lrzsz==》不成功
+直接在桌面上，用右键解压
+尝试再SQl环境下，@{path}，卡住，不动
+===============================================================
+
+
+
+
+	
+
+
+
+	
+
+
+
+
+
+
+
+

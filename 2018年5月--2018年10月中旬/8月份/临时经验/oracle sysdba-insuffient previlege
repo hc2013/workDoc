@@ -1,0 +1,21 @@
+现象：
+	conn / as sysdba;
+	
+症状：	
+	ORA-01031: insufficient privileges 
+
+解决办法：
+	在$ORACLE_HOME/network/admin，这个路径下，应该存在一个sqlnet.ora
+		如果这个文件没有，那么从oracle-product文件夹下面获得获得一个sample
+
+		在这个问题中，其实只需要将
+			#sqlnet.authentication_services
+			这个配置项的注释去掉或者配置为=ALL
+
+		问题就解决了
+
+
+进一步实验：
+	如果ORACLE_SID这个环境变量故意设置错误，那么conn这步的结果，会显示为连接到 connected to an idle instance
+
+	关于Oracle_SID也就是实例ID，这个细节需要注意

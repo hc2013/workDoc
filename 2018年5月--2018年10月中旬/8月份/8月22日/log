@@ -1,0 +1,2 @@
+curl 172.16.179.51:9200
+	 查看ES集群的Meta-data,包括Cluster name等信息

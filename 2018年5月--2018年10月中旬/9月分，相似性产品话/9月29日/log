@@ -1,0 +1,15 @@
+1.mvn package -Dmaven.test.skip=true
+	这样可以跳过测试类
+
+
+==============================================
+curl -X GET "localhost:9200/_search" -H 'Content-Type: application/json' -d'
+{
+   "query":{
+      "more_like_this_inorder":{
+          "likeField":"地处中国东北中部，东北亚地理中心",
+          "analyzerName":"sentence_analyzer",
+          "slop":10
+        }
+    }
+}'

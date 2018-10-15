@@ -1,0 +1,19 @@
+1.Atomic的背景
+	在Java中，对于i++这样的运算，其原生过程不是线程安全的（三个步骤，读-改-写回）
+	如果不用JNI修改底层实现，在Java语言这个层面，是无法实现线程安全
+	在这种情况下，Atomic就有出现的必要了
+
+2.AtomicInteger API
+	这个系列的API中，有几个有趣的API,	
+	1.lazySet(int);
+		这里的意义是，由于变量是Volatile的，也就是必须立刻写到共享内存当中，这就导致了可能出现的性能延迟
+			如果调用这个lazySet，那么就允许立即更新，那么这个方法，相比于set(int)可以获得些许的性能优化
+
+	2.compareAndSet(int expect,int update)
+		如果当前值==expect，那么以原子方式将该值设置为给定的值
+		这个方法能够保证不发生happen-before,也就是指令重拍序不会导致乱序
+		不过从源码的实现上看，两者是完全一致的，没有任何区别
+
+	由源码可以看出，Atomic的实现，是以unsafe作为基础的JNI调用
+	
+	

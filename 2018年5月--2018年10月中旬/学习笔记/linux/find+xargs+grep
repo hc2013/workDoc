@@ -1,0 +1,2 @@
+find . -name '*725*' |xargs grep --color=auto  "项目"
+	找到指定目录下的文件内容中包含有“项目”这个词的文件

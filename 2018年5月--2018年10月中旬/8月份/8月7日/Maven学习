@@ -1,0 +1,106 @@
+maven研究
+	mirror标示了repo之间的关系，关键配置项是mirrorof，代表了这个repo是哪个repo的镜像
+		这里一个显然的注意点是，同一个已经存在的repo不能被配置多个mirror，由于Maven不可能去解析每个mirror的内部内容，也就不会做多个mirror之间的
+			聚合操作，因此maven会非常简单第只取第一个mirror项目，而忽略后面相同的mirrorof
+
+Maven仓库体系
+	
+	本地库（起到cache功能）
+	远程库
+		中央库
+		私有库
+		其他共有库
+==================================================================================================
+新建Maven学习目录
+	/home/hc/maven-study
+
+	1.mvn archetype:generate -DgroupId=com.mycompany.app -DartifactId=my-app -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+		这里的archetype:generate是生成mvn项目骨架
+	
+	main+test+pom,最基本的项目骨架
+	The src/main/java directory contains the project source code, 
+	the src/test/java directory contains the test source, 
+	and the pom.xml file is the project's Project Object Model, or POM.
+
+	2.mvn package
+		报出Warning:File encoding has not been set, using platform encoding GBK, i.e. build is platform dependent!
+		只需要再pom.xml中加入配置项目即可
+		 <properties>
+        		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+   		 </properties>
+	
+	3.经过Maven package打包生成的target/classes/App.class是可以直接运行的
+	      更加标准的运行方式是通过java -cp的方式运行
+	      java -cp target/my-app-1.0-SNAPSHOT.jar com.hc.study.App
+	
+
+	4.关于goal和phase
+		archetype:generate ，这里的generate是一个goal
+		而mvn package中的package，是一个phase
+		几个自意义的Phase
+			1.validate 验证整个project的正确性
+			2.compile,编译项目的源代码
+			3.test ,使用合适的unit testing framework测试编译后的代码，注意这里的测试不要求代码已经被打包和部署
+			4.install，install package into local repository,以用于本地的其他工程
+			5.clean，清除先前build的产品
+			6.deploy,copy the final package to the remote repository for sharing with other developers and projects
+
+			dependency:copy-dependencies:这个命令将会赋值所有的项目依赖
+
+	pom.xml中的<packaging>jar</packaging>，这个配置项目，使得mvn package默认就是打成jar包
+
+
+
+	5.Maven plugin&& Maven dependency
+		这是两个独立的概念，有待弄清楚
+
+	6.~/.m2/repository/，这个目录下cache了之前引用过的jar
+		而mvn install,是能够将自己generate出来的这个jar文件安装到本地仓库上去${user.home}/.m2/repository
+			经过验证，com.hc.study确实存在与本地仓库中
+
+		当运行install这个phase的时候，compile,test,package这些前置phase会被依次执行
+
+	7.SnapShot（快照）是一个相对于Release(发行版）
+		snapshot是在final release version之前的一个development version
+		比如发行版本号是4.5,那4.5.snapshot就是一个正在开发的4.5的不稳定版本
+			
+	8.Maven ${basedir}/src/main/resources,是maven默认的资源目录
+		这个目录下的任何文件和目录都被打入你的jar包
+
+	9.How to use external dependecnies
+		<dependencies>这个章节，列出了所有build所需要的外部依赖
+			对于每一个<dependency>标签都有4个必须子标签
+				<groupId>,<artifactId>,<version>是Maven库提供的
+			而<Scope>决定了该Project如何使用这个依赖，可以设置为compile,test,runtime
+			Maven会首先从本地仓库中加载所有的依赖项目
+			如果本地没有，Maven会尝试将这些依赖从远程仓库拉取到本地仓库
+
+	10.maven-metadata.xml
+		这个xml中，包含Maven配置信息
+		添加到pom.xml中，然后当运行mvn compile的时候，如果本地仓库中没有相应的依赖
+		maven就会下载
+		
+
+
+
+===================================================================================================================================================
+1.Maven plugin是个什么概念
+
+2.非哥做的script下推，是指
+
+3.二级索引
+
+4.mvn compile/package是自动将所依赖的项目加入到project中？
+
+5.虚拟列？
+
+6.如果找不到source，可不可以走decompile那条路？
+
+
+7.R-Tree
+
+
+
+
+
+

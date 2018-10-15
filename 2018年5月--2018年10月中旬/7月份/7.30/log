@@ -1,0 +1,165 @@
+完成WKT程序的测试
+
+	1.Inceptor.Url该怎么写？
+	即db1.table1的URL该怎么写?
+	Inceptor的底层是用HDFS进行存储的
+	但是他的增删改查都是和普通sql完全一致的？
+
+===============================================================================
+10：14
+	shiva01
+		>kubectl get pods |grep hdfs
+		>kubectl exec -it hadoop-hdfs-journalnode-hdfs1-679547775-rlx17 bash
+	
+	此处journal Node的意义是？
+	进入shiva02
+
+===========================================================================
+inceptor5在shiva04上的Ip地址
+	端口号需要自定
+
+==============================================================================
+进入流程
+	搜索k8s集群上，与inceptor5有关的进程
+	kubectl get po |grep inceptor5
+	进入其中一个节点
+	kubectl exec -it inceptor-executor1-inceptor5-3907363456-lzfgt bash
+	进入hive
+	beeline -u jdbc:hive2://localhost:10020
+	查看日志
+	kubectl logs inceptor-executor1-inceptor5-3907363456-lzfgt
+
+	在shiva01上初始化beeline的环境变量
+	source /home/transwarp/TDH-Client/init.sh
+
+	进入hive,显示宽度为200	
+	beeline -u jdbc:hive2://shiva04:10020 --maxWidth=200
+
+	创建hcdb.hc_table
+		CREATE TABLE hc_table(name string,shape string) stored as es;
+
+=======================================================================================
+测试直接插入WKT
+	1.使用jdbc:inceptor://172.16.3.124:10020/hcdb
+		报错：No suitable driver
+	2.改成jdbc:hive2://172.16.3.124:10020/hcdb
+	
+	3.数据貌确实插进去了
+		现在的处理方式，是把WKT当作是String插进去
+		而且连接的是hive2的驱动
+		这样有没有问题
+	4.经确认，没有问题，路径已经跑通过了，现在需要做功能增强
+
+==================================================================================
+目前来看有两件事情要做
+	1.命令行参数的解析
+	2.集成到image中进行测试
+	3.SQL优化，Select的内存占用
+		  insert的时间占用
+
+====================================================================================
+Apache CLI的探索
+使用GNU的长参数形式
+	--human-readable
+=========================================================================
+测试用的命令行参数1（命令行配置）
+-in_uri jdbc:oracle:thin:@172.16.3.121:1521:XE -in_user system -in_password oracle -in_table_name cola_markets -in_cols "name","shape" -out_uri jdbc:hive2://172.16.3.124:10020/hcdb -out_user "" -out_password ""  -out_table_name hc_table -out_cols "name","shape"
+测试用的命令行参数1（prop文件配置）
+-f ./test.properties
+===========================================================================================================
+17:10
+	Docker Image中转WKT格式测试成功
+==========================================================================================================
+17：10
+	修正转ShapeFile工具中bug
+	rownum是伪字段，不能作为区间依据
+	SELECT cols.column_name FROM all_constraints cons,all_cons_columns cols WHERE cols.table_name=cola_markets AND cons.constraint_type='P' AND cons.constraint_name=cols.constraint_name AND cons.owner=cols.owner ORDER BY cols.table_name,cols.position;
+
+===========================================================================================================
+使用子查询的方式完成Oracle区间查询的功能
+	这种方式非常粗糙，性能也糟糕，但是目前来看比较简单易用	
+===========================================================================================================
+Oracle中如何获取一个table的所有column?
+SELECT * FROM USER_TAB_COLUMNS where TABLE_NAME = UPPER('cola_markets');
+
+经测定 USER_TAB_COLUMNS是存储所有表格源信息的表，通过这张表能够获得表的列名称，但是这里的表名必须转为大写
+
+但是这里仍然有问题啊，这个schema使用jdbc获得的，Ogr的DataSource执行sql之后，是个Layer啊！
+哎呦我去
+
+=========================================================================================================
+Oracle的MINUS,INTERSECT操作符，都是针对单列值的，不能将多个组合值进行操作。
+
+========================================================================================================
+30日脚本备份
+set verify off
+accept TABLE_NAME char prompt 'Table name>'
+
+SELECT cols.column_name
+FROM all_constraints cons NATURAL JOIN all_cons_columns cols
+WHERE cons.constraint_type = 'P' AND table_name = UPPER('test');
+
+select * from (select name,shape,rownum as num from cola_markets) where num between 2 and 8;
+
+select * from cola_markets where rownum <= 8 minus select * from cola_markets where rownum < 2;
+
+select * from user_tab_columns where table_name='cola_markets';
+
+select * from cola_markets where rownum=1;
+
+select * from user_cons_columns where constraint_name=(select constraint_name from user_constraints  where table_name='cola_markets'  and   constraint_type='P');  
+
+
+select column_name from all_tab_columns where owner = 'system' and table_name = 'cola_markets';
+
+
+SELECT * FROM USER_TAB_COLUMNS where TABLE_NAME = UPPER('cola_markets');
+
+SELECT name FROM COLA_MARKETS where rownum<8 INTERSECT SELECT name FROM COLA_MARKETS where rownum<5; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		

@@ -1,0 +1,32 @@
+IndexReader是对Index实时访问的抽象接口
+两个子类：
+	LeafReader:不包含sub-readers，是atomic的,支持对stored fields，doc values,terms和postings的访问
+	CompositeReader:LeafReader的上层Reader，只能获取下层LeafReader的StoreField，不能直接获取postings,但是可以获取所有的subReaders
+
+
+	DirectoryReader是实验了BaseCompositeReader interface的抽象类
+
+
+LeafReader:
+	getBinaryDocValues(String field);
+
+
+Lucene性能优化：
+	1.lucene.commit.batch.size && Lucene.commit.time.interval
+	     应该是lucene批量提交的size和时间间隔
+
+	2.lucene.buffer.size
+		设置luceneRamBufferSize的方法
+		适当调大这个数值能够提高速度，但是达到一个limit之后，就不能再对速度有所改善了
+
+	3.lucene.merge.factor
+		lucene的合并参数，这个值设的很大将会导致更多的磁盘访问，从而降低性能
+	
+	4. lucene.autocommit.documents.interval&& lucene.optimize.interval
+
+
+Lucene索引文件分类
+	.si:segment的元数据
+	.cfs,.cfe：可选的虚拟文件，包括其他索引文件系统频繁用完的文件句柄
+	
+	.f

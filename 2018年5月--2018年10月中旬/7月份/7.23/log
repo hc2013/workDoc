@@ -1,0 +1,109 @@
+Oracle SDO_Geometryx转GeoJson
+
+position:一个二维或多维的空间坐标
+	
+geometry:有一个type+coordinates，也就是类型+坐标
+	Point,MultiPoint，LineString,MultiLineString,Polygon,MultiPloygon
+
+feature:Feature+geometry+properties
+	
+feature collection:一个feature的数组
+
+================================================================
+14：24:发现重要线索
+	SDO_UTIL.TO_GEOJSON能够实现SDO_GEOMETRY 到GeoJson的转换
+		http://www.dba86.com/docs/oracle/12.2/SPATL/spatial-concepts.htm#GUID-D703DF4D-57D1-4990-8F53-CAAA9C8FCB2F
+		http://www.dba86.com/docs/oracle/12.2/SPATL/SDO_UTIL-reference.htm#GUID-DB459897-729F-41D6-A2F3-DD39F22D8F63
+
+	测试SDO_UTIL.TO_GEOJSON
+		报错：ORA-00904: "SDO_UTIL"."TO_GEOJSON": invalid identifier
+		
+	可能原因：版本问题?11？12？
+		Geo Raster is not installed default?
+
+	经查11.2的文档，验证SDO_UTIL.TO_WKTGEOMETRY
+		不再出现invalid identifier，但是返回结果为空
+			这说明SDO_UTIL这个包在这个数据库中是有效果的
+
+	可能原因：
+		Raster?
+		Oracle Locator?
+
+	Clearly not SQLPLUS ... Maybe that tool is just unable to show the result - the string returned is a CLOB
+	SqlPlus无法显示CLOB格式的string？
+============================================================================================================================
+阶段性结论：	
+	Oracle11.2 并不支持直接转GeoJson
+	但是可以支持TO_WKB,TO_WKT
+	而Gson和GeoJson之间的距离其实并不大
+	因此，可以选择手写一个java的转换函数，不过这个可以延后一些
+=======================================================================================
+如果SqlPlus只是不支持显示CLOB结果，那么绕开SqlPlus，直接用JDBC呢？
+	是不是能取到结果呢？
+	测试结果：并不能！
+	那么很显然，必须解决这个结果为Null的问题了
+
+============================================================================================
+重开SQL-Developer&&GeoRapter
+	还有另一个工具Oracle-Locator
+	上周五已经下载了sql-Developer18.rpm
+
+	Sql-Developer的版本号令人费解，最新版本能找到18,而earlier能够找到17.4和17.3
+		这是什么鬼？会不会和OracleServer存在不匹配的问题？
+
+	GeoRaptor应该是Sql-Developer的extension
+==============================================================================================
+不管了，先安装SQl-Developer
+1.rpm转deb
+	转为deb包：/home/hc/oracle-sql-devloper/sqldeveloper_18.2.0.183.1748-2_all.deb
+2.安装
+	sudo dpkg -i sqldeveloper_18.2.0.183.1748-2_all.deb
+
+3.命令行直接输入sqldeveloper
+	我擦，出现一个图形界面软件软件，我日，竟然还有这种操作
+
+===================================================================================================================
+安装GeoRapter
+	The purpose of GeoRaptor project is to extend Oracle SQL Developer development tool with additional functionality that is 		needed by database administrators of Oracle Spatial data, ESRI ArcSDE administrators or advanced GIS user.
+	GeoRapter是对Oracle Sql Developer在Shape和Spatial Data上的拓展
+
+再SQl-Developer的界面上安装GeoRapter，网络链接不上
+转为网页下载jar包，3.2.4版本不能成功下载
+	转而下载3.2.2：
+	https://sourceforge.net/projects/georaptor/files/GeoRaptor/
+===================================================================================================================
+
+尝试界面安装GeoRapter====>失败，现在是不知道下载下来的这个org.GeoRaptor-install.jar是该怎么处理
+	这个jar包是否是用来运行安装的？
+
+========================================================================================================================
+17：37界面安装geoRapter竟然成功了，安装后重启
+依然看不出有什么变化，但是找到了select的操作窗口
+========================================================================================================================
+试图转向Oracle Locator
+	迁出了Oracle Spatial
+	这两个东西，一个是企业版，一个是免费版
+	试图搞定这个Locator，但是
+	依照一下这个教程
+	https://docs.oracle.com/cd/E18283_01/appdev.112/e11830/sdo_locator.htm#BGBJCBBD
+	运行了Linux: @$ORACLE_HOME/md/admin/mddins.sql，这个文件，大量报错
+	object SDO_PC_PKG does not exist
+
+	可能原因是Oracle MultiMedia的问题
+	暂时搁置吧
+
+=================================================================================================================================
+
+	
+
+
+
+
+
+
+
+
+		
+		
+	
+

@@ -1,0 +1,6 @@
+threadhold(阈值）,capacticity（容量）,loadFactor（加载因子）
+Entry table:拉链式
+modcount===>保障fail-fast
+
+================================================================================
+HashMap

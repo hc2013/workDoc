@@ -1,0 +1,25 @@
+DocumentsWriterPerThread
+
+DocumentWriterFlushControl
+
+
+DocumentsWriterPerThreadPool
+
+ThreadState extends ReentrantLock:ThreadState就是一个ReentrantLock
+
+DocumentsWriterDeleteQueue
+
+DefaultIndexingChain
+	(Consumer)
+
+1.Writer.addDocument() 的主要阶段划分
+
+	1.preupate()
+		预更新，检查有无阻塞的flush
+	
+	2.obtainAndLock
+		获得线程锁，ThreadState
+
+	3.由Consumer.processDocument()
+		Cosumer处理这个Doc
+		

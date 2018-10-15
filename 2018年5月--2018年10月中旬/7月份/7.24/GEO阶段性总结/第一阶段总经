@@ -1,0 +1,20 @@
+ShapeFile:
+	能够正确导出shp，dbf,shx文件
+
+GeoJson:
+	Oracle11无法支持SDO直接转GeoJson,SDOAPI中也没有发现相应的函数
+	但是使用Gson.jar已经将Oracle Struct转为普通的Json
+	从json到GeoJson应该并不复杂，可以用Java代码实现
+
+WKT:
+	WKT wkt=new WKT();
+	byte[] bytes=wkt.fromSTRUCT(tmp);
+WKB:
+	同上
+
+遗留的问题：
+	1.正在使用的这个版本的Oracle实际上缺失JavaVm和Oracle Coordinate这两个组件
+	导致SDO_Geometry的某些method不能正常运行
+	2.GDAL的getFeature(name)可能会导致core dump error的问题，也没有解决
+
+	这两个问题并没有影响到方案的构建，暂时予以搁置

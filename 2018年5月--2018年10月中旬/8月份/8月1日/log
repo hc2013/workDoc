@@ -1,0 +1,123 @@
+9点到10点14
+	整理Oracle2WKT的文档，更新jar包，备份
+
+记录一下，几个关键jar包的路径
+	/home/hc/oralce-spatial-api/sdoapi.jar
+	/home/hc/oralce-spatial-api/sdotype.jar
+	/home/hc/oralce-spatial-api/sdoutl.jar
+
+	/home/hc/my-jar/oracle_db/ojdbc6.jar
+	/home/hc/my-jar/oracle_db/inceptor-driver-5.1.0.jar
+
+	/home/hc/gson/gson-2.1.jar
+	/home/hc/tmp/gdal-work/gdal-2.0.0/swig/java/gdal.jar
+==========================================================================================
+Linux find,xargs研究
+	find ./hanchun -name "*.png"
+		搜索./hanchun，路径下，所有名称含有png的文件
+	find ./hanchun -type f
+		找到所有的普通文件
+
+Linux xargs命令是给其他命令传递参数的一个过滤器，能够将标准输入参数转换成命令行参数
+	echo namenamenamename |xargs -da：定义分隔符
+	echo namenamenamename |xargs -n3：定义每行输出数目
+
+	关键功能：替换字符串,使用-I参数
+		cat arg.txt | xargs -I {} ./sk.sh -p {} -l
+		
+	训练：将～/hanchun目录下的所有png文件复制到./test下
+		ls *.png |xargs -I $ cp $ ./test-xargs/
+
+=================================================================================================
+JDBC内存和速度优化
+	1.JDBC Transaction
+	2.JDBC FetchSize
+		本机数据库+本机JVM：fetchSize=500时达到较好效果，再多效果不明显
+	
+	不同的DB driver，默认的fetchSize不同，Oracle FetchSize=10;
+	ResultSet使用的延时加载的原理，当stmt.exequery()之后ResultSet中是没有数据的
+		只有调用rs.next的时候，才会把fetchSize条数据移动到JVM的memory buffer中
+	
+
+	
+
+=======================================================================================================
+“损失测试报告”的截图收集
+=======================================================================================================
+Talbe不存在情况下的，建表功能的实现
+
+由于暂时不清出Inceptor对于表名是怎么存储，目前通过catch exep的方式来实现
+
+暂定，只有当表格本身不存在，需要新建表格的时候，才是generate_PK生效
+	也就是如果表格本身已经存在了，那就忽略这个参数
+	
+	当generate_pk=true的时候
+		再第一列生成PK,es_id,在插入外部做自增长，这种方式存在巨大的逻辑漏洞，但目前妥协一下
+
+下一阶段，可以根据Inceptor ES Stored的具体细节，完善一下这个功能
+========================================================================================================
+Java 泛型的使用
+========================================================================================================
+14：53,主键添加代码完成，测试
+	1.table not exist,pk=no
+	2.table exist,pk=yes
+	3.talbe not exist,pk=yes;
+
+	发现bug,_id column must be string in ES
+========================================================================================================
+
+17:56
+	会议结束，效果一般
+	得出下一步任务：验证Oracle====>ShapeFile的数据损失
+			好吧，我现在的心情好像不是很想写代码
+=========================================================================================================
+18：09
+	ShapeFile数据完整性验证
+		有两个方向
+			1.官方的文档中，SDO转ShapeFile的功能应该是固有的
+				先去看官方文档吧
+			2.现有代码中，也就OGR提供的可用API,其实也并没有完全吃透
+				也许有一些隐藏的功能可以挖掘出来
+
+
+======================================================================================================================
+18：54将Oracle生成的ShapeFile导入到Oracle中
+
+发现Oracle命令行convertor，尝试
+
+java -cp /home/hc/my-jar/oracle_db/ojdbc5.jar:/home/hc/oracle-spatial-api/sdoutl.jar:/home/hc/oracle-spatial-api/sdoapi.jar oracle.spatial.util.SampleShapefileToJGeomFeature -h 172.16.3.121 -p 1521 -s xe -u system -d oracle -t cola_markets100 -f /home/hc/IdeaProjects/Gdal_Shiyan/shiyan2-1-10
+
+注意，此处必须是ojdbc5，不能使6,否则报class not def
+19：40:导出成功
+
+=========================================================================================================================
+19：47：尝试将克总的shape file导入，再导出，再用工具转成txt
+
+1.新建/home/hc/test-data,从shiva01上拷贝/home/dekker/geo/australia/web/map里面的shapefile
+
+2.导入到表格map中
+
+3.使用OralcleSpatial_to_ShapeFile 导出shapeFile
+	报出警告：Warning 1: Value 51894505167.3080978 of field ALBERS_SQM of feature 0 not successfully written. Possibly due to too larger number with respect to field width
+
+4.将/tmp/geotools-transwarp down到IdeaProjects
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

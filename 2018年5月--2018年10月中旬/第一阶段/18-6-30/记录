@@ -1,0 +1,10 @@
+解决Field插入异常的问题
+	并不是tokenized，indexOption，TermVectors之间不兼容，而是因为FieldValue是Binary类型的
+
+
+根据各个文件size，对磁盘占用做全面对称测试。
+关键属性
+	index:正经的倒排索引
+	
+
+Tokenized对index duration的影响，非常巨大！！！	

@@ -1,0 +1,2 @@
+再内存中的SortedNumericDocValue中，存在一个long数组，这个数组是对Value进行升序排序，并且去重的
+	目前来看，这样做的价值暂时不清楚

@@ -1,0 +1,52 @@
+这几天对WKT格式下的Oracle_SDO_GEOMETRY数据进行了数据损失测试，得出的结果比较乐观，也比较牢靠
+测试分4步
+	1.根据官方文档对SDO_ELEM_INFO_ARRAY和SDO_GTYPE这两个参数的说明进行枚举，再搭配一个相应的SDO_ORDINATES（坐标数组）
+		测试集合涵盖了Point,PointCluster,Line,Multiline,Polygon,MultiPolygon以及这些大类下的小类
+	
+	2.使用SDO_GEOMETRY.ST_IsValid()的对SDO_GEOMETRY进行验证，测试这个几何体对象是否正确，正确返回1,错误返回0
+
+	3.使用OracleSpatial_to_WKT_toInceptor，将构造出来的Geometry对象进行Inceptor导入
+
+	4.使用hive进行select，肉眼比对是否存在坐标缺失。
+
+测试结果：
+	1.一共使用2个sql脚本，分别包含18个和32个（30个valid,2个invalid),涵盖了Gtype01-07这7中情况下的所有2维可能几何体
+		注意，这里只有2维的，3维的Surface，以及08，Solid,09 MultiSolid都没有覆盖到
+
+	2.发现两处异常
+		第一处是之前所提到的Oriented Point(向量点）的坐标缺失，这里不再赘述
+		第二处是对于Collections type的测试中，发现如果集合中存在Polygon，那么这个Polygon必须配置为2003，也就是interior，内部多
+			边形，才能通过Valid测试，但是在jar包转WKT的过程中却抛出异常，经过断点测试发现，这是因为jar包中代码的switch判断
+			缺少2003这种情况造成的。如果将2003改成1003.，转WKT是就可以正常运行，但是Oracle的valid验证无法通过
+			因此，判断此处是sdoutil.jar中的一个bug。可以通过修改代码来修复。
+
+
+	3.类型模糊,差异
+		测试结果显示，Oracle_SDO的类型更加细化，经过转WKT之后，原有类型可能会被翻译为另一种名称，比如曲线
+			Curve Line(2002)=====>CIRCULARSTRING
+		不过除了以上两种异常之外，绝大多数情况下没有发生坐标损失和逻辑错误，最多就是两边的名称存在差异
+
+
+总结：
+	1.经过上周4,5和本周1的测试发现，在绝大多数情况下，WKT格式对于Oracle SDO_Geometry的表达是没有歧义和损失，目前的55种测试中，只有1种
+发生坐标缺失，1种发生转换异常，其他53种的坐标信息都是正常的。因此，之前确实有低估了WKT格式的表达能力，高估了可能发生的数据损失。
+	
+	2.目前只能保证2维数据的可靠性（3维数据只测试了Point和Point cluster)
+	
+	3.53种情况并不是全集，很难枚举所有小类型
+
+
+补充：之所以要做以上这个测试，主要是因为之前所做的shapeFile数据完整性的测试也存在逻辑漏洞。
+	shpeFile的测试是用克总提供的shapeFile，导入Oralce,再导出的方式进行测试，比对两个shapeFile的差异
+		这种方式下，shapeFile虽然没有损失数据，也不够充分说明shapeFile的数据转换就是完整的
+		因此最后还是决定去构造Oracle数据
+
+
+韩淳
+8月6日
+
+
+	
+
+
+

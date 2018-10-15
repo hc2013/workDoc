@@ -1,0 +1,139 @@
+9点12
+1.Oracle Spatial Data的导入研究
+	SDO_GEOMETRY是OracleSpatial的核心几何type
+	Oracle Spatial and Graph使用标准的 Oracle表格，可以进行标准的访问和加载
+
+
+	1.小批量导入transactional insertions
+		transaction,loop,procedure
+
+=========================================================================
+DECLARE
+    name string;
+    geom SDO_geometry; 
+
+BEGIN
+    name:='cola_shiyan';
+    geom:=SDO_geometry (2003, null, null,SDO_elem_info_array (1,1003,3),SDO_ordinate_array (-109,37,-102,40));
+
+    INSERT INTO cola_markets VALUES(name,geom);
+END;
+
+================================================================================
+10:52
+	Oracle，sql脚本令我费解
+	改用粗暴的方法，迅速构造数据，注意尽可能覆盖全部的数据类型可能，尤其是对空值的测试
+================================================================================
+数据插入脚本备份
+Insert INTO countries VALUES(1,'china',SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,3),SDO_ORDINATE_ARRAY(1,1,5,7)),NULL);
+--Rectangle
+
+INSERT INTO countries VALUES(2,'america',SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1003,1, 19,2003,1),SDO_ORDINATE_ARRAY(2,4, 4,3,
+    10,3, 13,5, 13,9, 11,13, 5,13, 2,11, 2,4,7,5, 7,10, 10,10, 10,5, 7,5)),NULL);
+--Polygon with a Hole
+
+INSERT INTO countries VALUES(3,'england',SDO_GEOMETRY(2002,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,4,2, 1,2,1, 3,2,2),SDO_ORDINATE_ARRAY(10,10, 10,14, 6,10, 14,10)),NULL);
+--Compound Line String
+
+INSERT INTO countries VALUES(4,'french',SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1005,2, 1,2,1, 5,2,2),SDO_ORDINATE_ARRAY(6,10, 10,1, 14,10, 10,14, 6,10)),NULL);
+--Comound Polygon
+
+INSERT INTO countries VALUES(5,'japan',SDO_GEOMETRY(2001,NULL,SDO_POINT_TYPE(12, 14, NULL),NULL,NULL),NULL);
+--Point
+
+INSERT INTO countries VALUES(6,'german',SDO_GEOMETRY(2001,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,1,1, 3,1,0),SDO_ORDINATE_ARRAY(12,14, 0.3,0.2)),NULL);
+--Oriented Point
+
+INSERT INTO countries VALUES(7,'canada',SDO_GEOMETRY(2003,NULL,NULL,SDO_ELEM_INFO_ARRAY(1,0,57, 11,1003,3),SDO_ORDINATE_ARRAY(6,6, 12,6, 9,8, 6,10, 12,10, 6,4, 12,12)),NULL);
+--Type0 Element
+
+INSERT INTO countries VALUES(8,'Scotland',SDO_Geometry (3003,NULL,NULL,SDO_Elem_Info_Array(1,1003,1),SDO_Ordinate_Array(0.5,0.0,0.0,0.5,1.0,0.0,0.0,1.0,1.0,0.0,0.0,1.0,0.5,0.0,0.0)),NULL);
+--Three-Dimensional Geometry
+
+commit;
+
+sql-developer中，将脚本备份到/home/hc/sql/Oracle_xe.sql
+======================================================================================================================	
+在beeline上建表
+	hc_countries_table
+	CREATE TABLE hc_countries_table(cid string,name string,part1 string,part2 string) stored as es;
+
+======================================================================================================================
+1.关于工具的功能完善
+	由于ES默认以第一列作为主键，需要为用户提供对应配置项目
+		是生成主键
+		还是使用默认的主键
+	
+
+	如果target table not existed怎么办?需要自己创建对应的表格才行。
+=============================================================================================================================
+2.
+	关于转WKT的性能完善先放一放
+	先把构建测试数据集的事情做完
+
+
+	之前就发现了一个问题，SDO_GEOMETRY,直接转WKT。会损失之前的类型数据
+		这是一个大问题，需要首先解决
+
+	两边做对比
+		1.Oriented Point===>Point
+		2.Rectangle====>Polygon
+		3.Compound Line String====>COMPOUNDCURVE
+		
+================================================================================================================================
+尽管暂时不清楚JGeometry能否实现更好的功能，但是为了应急，还是先完成目前这种方案的测试，看一下各种类型的具体损失
+	以给方案1,一个答复
+
+=================================================================================================================================
+
+============================================================================================================================================
+1.先来两维的
+INSERT INTO countries VALUES(9,'Russia',SDO_Geometry (2001,NULL,NULL,SDO_Elem_Info_Array(1,1003,1),SDO_Ordinate_Array
+	   (0.5,0.0,0.0,0.5,1.0,0.0,0.0,1.0,1.0,0.0,0.0,1.0,0.5,0.0,0.0)),NULL);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

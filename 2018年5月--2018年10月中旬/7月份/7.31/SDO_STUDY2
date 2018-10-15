@@ -1,0 +1,79 @@
+ORACLE_SDO_GEOMETRY
+	的官方定義，就是SDO_GTYPE+SDO_SRID+SDO_POINT+SDO_ELEM_INFO+SDO_ORDINATES
+
+暫時不去研究geocodign，geoRaster和Topology
+
+SDO_GTYPE:是一個4位的DLTT格式
+	其中D=Dimension，維數
+	L:代表LRS（Linear Referening System)系统中的几何体，哪个坐标维度包含度量值
+		一般设为0，就行了
+
+	TT:代表几何体的类型，00到09
+	00：未知几何体，忽略
+	01：Point
+	02: LINE,CURVE	
+	03: POLYGON,SURFACE(有洞或者没有洞都可以，三维点的情况下，所有的点必须共面）
+	04：COLLECTION(异质集合类型，可以包含各种其他类型的type)
+	05:MULTIPOINT(一点或多点）
+	06：MULTILINE,MULTICURVE(一条或多条线）
+	07：MULTIPOLYGON,MULTISERFACE(多个面）
+	08: SOLID(固体，定义了一个封闭的三维空间）
+	09：MULTISOLID（多个固体）
+=======================================================================
+SRID:这个元素用来识别一个几何体和一个坐标系统之间的联系
+	如果SRID=NULL，那么这个geomtry并没有跟任何coordinate system建立联系
+	如果SRID!=NULL，那么这个SRID的值必须是SDO_COORD_REF_SYS table中的一行
+	注意：如果以spatial index要在某一列上建立，那么这一列中所有的几何体必须有完全相同的SDO_SRID
+	在这个阶段直接设为NULL就好
+===========================================================================================================
+SDO_POINT:这个元素说明了一个Point,二维或者三维的坐标，
+	只有当SDO_ELEM_INFO和SDO_ORDINATES都是NULL的时候，这个SDO_POINT才被看作一个POINT，否这直接忽略
+	这样做的目的，是优化了存储，因为减少了ELEM_INFO和ORDINATES的空间消耗
+===========================================================================================================
+SDO_ELEM_INFO
+	这个元素的作用，是告诉你怎么去解读SDO_ORDINATE中的数据
+	以三元组为单位，一个几何体中，有一个元素，就对应有几个三元组
+	第n个三元组的第一个数字SDO_STARTING_OFFSET表示，第n个元素的起始坐标是在坐标数组中的哪个位置上
+	
+	第二个数字  SDO_ETYPE 表示元素的类型，可取值多：1，2,1003,2003,1005,2005,1006,1007等，具体需要时可查
+	
+	第三个元素 SDO_INTERPRETATION
+	这个元素的含义分两种情况
+		1.如果SDO_ETYPE是一个复合元素，那么这个数字说明接下来有多少个三元组是这个Element的组成部分
+		2.如果SDO_ETYPE不是一个复合元素，那么这个数字决定了这个Element的坐标该如何被翻译
+======================================================================================================================
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,25 @@
+经过阅读代码，对于MLT的流程已经非常清楚了
+应该说，MLT对于文章与文章之间关键词语的重复
+
+
+MLT的使用场景：文章与文章之间存在非常多的“关键”词语重复
+
+对于这种情况：MLT会把tf*idf值最高的K个词挑选出来，构建一个Boolean Query，这个Boolean Query的clause根据是否使用Boost，分为两种情况
+	
+	1.不使用boost
+		clause=termquery
+	2.使用boost
+		clause=boostQuery
+		注意这里的boost=my_score/min_score,也就是Queue中每个ScoreTerm的的score和最小值的商
+
+
+
+重要参数有以下若干
+
+        mlt.setBoost(true);//是否开启权重
+        mlt.setMinTermFreq(5);//筛选的最小tf,再要检索的article中，tf小于这个值的term直接被放弃掉
+        mlt.setMinDocFreq(1);//最小的docFreq，是term在整个Index中出现的docFreq,这个值不建议设置大于1,因为某些极其关键的词就是有可能在整个文档几何中出现次数很少
+        mlt.setMaxDocFreq(30);//最大的docFreq，这个必须设置，从而过滤掉在大量文档中出现的词语，比如“你好”，“恩”，“恩”,这种词
+        mlt.setMinWordLen(1);//最小词长度，
+        
+        mlt.setMaxQueryTerms(125);//最大的Term数目，这个数字和实际数字往往不一致，因为还到底有多少，其实受限于上面提到的那几个参数

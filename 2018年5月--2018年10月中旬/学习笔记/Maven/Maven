@@ -1,0 +1,48 @@
+Maven install
+	这个命令会把jar包下载到本地资源库中，目录为groupId+artifactId+version
+		命令示例：
+			mvn install:install-file -Dfile=ojdbc6.jar -DgroupId=com.oracle -DartifactId=ojdbc6  -Dversion=11.2.0  -Dpackaging=jar
+
+java -jar这个命令适用于jar包中已经存在配置良好的main入口，如果没有或者配置不全，则会报出“主清单”错误
+
+java -cp，
+	这个命令，注意要把当前jar包放在path串的最后，否则找不到
+	
+注意maven package这个命令默认是不会把琏式依赖都打包的
+	如果要琏式依赖打包，需要明确maven shade
+=========================================================================================================
+maven shade最简单用法
+	<include>*</include>
+	把所有依赖包都打进来
+
+直接使用-cp ,不加其他，成功！！
+
+
+注意，在使用filter对jar内部指定类的include,exclude的时候，需要指定包内.class文件的路径，而不只是类名，否则maven无法识别出来
+通过实验，使用exclude，确实是让size变小了
+
+<transformer><mainclass>配置main入口，使得jar能够直接运行
+===================================================================================================================
+=========================================================================================================================
+
+Maven settings学习
+
+1.安装的地方：${M2_HOME}/conf/settings.xml 全局设置
+2.用户的目录：${user.home}/.m2/settings.xml 用户设置
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

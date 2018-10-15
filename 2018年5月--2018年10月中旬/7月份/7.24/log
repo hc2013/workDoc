@@ -1,0 +1,70 @@
+Oracle Locator依赖于Oracle Multimedia
+
+11g的Oracle应该是默认安装了，但我还是尝试一下手动安装
+
+经过阅读，发现文档中对Locator的描述确实之前多有遇到，可能只是sqlplus的显示问题吧
+
+发现sdoutil这个包，这个包，是不是可以用一下？
+===============================================================================
+经过实验，发现SDO_GEOMETRY这个类型发生缺失，可能是昨天的问题，尝试重新安装Oracle Locator
+mdinst.sql文件缺失，无法重新安装spatial,
+
+===========================================================
+开始重建sql server环境
+备份文件listener.ora tnsnames.ora
+==========================================================
+发现问题，这个镜像不是之前下载下来的，而是直接用靳师兄的镜像！！！
+我日
+==================================================================
+开始修复spatial
+select owner, object_name, object_type from dba_objects where object_name like 'SDO_%';
+no rows selected;//也就是所有Spatial都被卸载了，我日
+
+=====================================================================================
+SELECT comp_id,version,status FROM dba_registry;
+发现缺失组件ORDIM,JAVAVM
+SELECT comp_id,version,status FROM dba_registry WHERE comp_id IN ('JAVAVM','ORDIM','XDB');
+缺失MDSYS用户
+user or role 'MDSYS' does not exist
+===========================================================================
+创建MDSYS用户
+	CREATE USER MDSYS IDENTIFIED BY 123;
+赋予MDSYS用户权限
+	@ORACLE_HOME/md/admin/mdprivs.sql(此处报了一个class error)
+以MDSYS链接
+	connect MDSYS
+安装Spatial
+	SQL> @ORACLE_HOME/md/admin/catmd.sql(这个脚本不存在）
+========================================================================================
+开始下载Oracle Server11,速度非常慢，不能指望这个
+========================================================================================
+思路重整
+现在的问题是Oracle Spatial被我意外卸载了，导致SDO这个Object已经不存在了
+而重装Spatial的过程中。其所需要的JavaVm同样非常麻烦
+更有说法，Xe版本不支持Java Vm，这就更加难受了
+现在应该回到最初的那个问题，也就是Spatial重装的问题
+之前的Server也没有JavaVm,SDO相关的函数调用也有问题，但是Spatial确实是安装了的
+那么按照这个思路，不装Java,直接安装Spatial应该也是可行的
+
+=============================================================================
+
+14：07
+	运行以下命令,将oracle目录映射到新的目录上，故障被修复
+		docker run -d -p 8087:8087 -p 1521:1521 -v /my/oracle/data.bak:/u01/app/oracle 172.16.1.99/transwarp/oracle-xe-11g:latest
+=======================================================
+Java代码测试
+WKB.fromSTRUCT()运行完成
+	
+
+
+
+
+
+
+
+
+
+
+
+
+

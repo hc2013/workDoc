@@ -1,0 +1,11 @@
+certificate signed by unknown authority
+	 这个docker的问题是源于docker的证书不正确导致的
+	
+	一般的解决方式是在server端生成ca.crt，再拷贝到client端的/etc/docker/certd./[ip]/下面
+
+		server生成crt的命令：openssl req -newkey rsa:4096 -nodes -sha256 -keyout certs/domain.key -x509 -days 365 -out certs/domain.crt
+	
+	我的结局办法比较投机，从shiva01中拷贝ca.crt，人才！
+
+	参考博客
+	https://my.oschina.net/yyflyons/blog/656280

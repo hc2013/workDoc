@@ -1,0 +1,208 @@
+9:30,找到docker教程网址
+	注意：Gitlab的登录用户名和密码与邮箱一致
+		chun.han@transwarp.io/Hc19940811
+
+============================================================
+1.本地安装docker
+		uname -r 查看Linux内核版本
+		wget -qO- https://get.docker.com/ | sh  使用wget安装docker =====》卡住
+
+		转为
+			curl -sSL http://acs-public-mirror.oss-cn-hangzhou.aliyuncs.com/docker-engine/internet | sh -
+			有一个网址报出404，NotFound
+
+		转为：
+			sudo apt install docker.io
+			cmd>docker,OK
+
+		新建/home/hc/docker-work,用作docker的工作目录
+			
+		尝试docker pull 172.16.1.41:5000/library/centos:7.2.1511
+			报错：Error response from daemon: Get https://172.16.1.41:5000/v1/_ping: x509: certificate signed by unknown authority
+			应该是权限问题，经google,得add a self signed certicate on the remote machine
+
+		a bundle of:一捆，一大堆	
+		intermediate：中间人，中介
+			
+		将docker_task0目录下的certs.d.tgz包解压缩到本地的/etc/docker目录下
+			error解决
+
+		docker run参数
+			-d: 后台运行容器，并返回容器ID；
+			-i: 以交互模式运行容器，通常与 -t 同时使用；
+			-p: 端口映射，格式为：主机(宿主)端口:容器端口
+			-t: 为容器重新分配一个伪输入终端，通常与 -i 同时使用
+			-v:用于容器和宿主机之间的目录映射
+						宿主机目录：容器目录
+
+======================================================================================================
+docker run -it 172.16.1.41:5000/library/centos:7.2.1511 bash
+		(repositroy:tag)
+		注意：这里-it和bash要搭配使用，-it是交互模式
+docker exec -it [id] bash
+		注意，当docker run没有用-d选项运行的时候，docker run推出后就无法再exec了
+
+==========================================================================================================
+docker的文档被git clone到/tmp目录下面了
+	经过朱老板介绍，对docker的初步认识为docker是做一个轻量级虚拟化的功能，每一个虚拟机作为一个进程运行在物理即上
+	image===iso
+	container===vm
+	
+	docker的仓库是要配置的，certifate （ca.crt)是从仓库中拷贝过来的
+	对于一个image的命名可以随意，但是如果能够遵循标准的命名命名规则，即
+	Ip:port/dir:tag这个格式
+	那么在push和pull的时候，docker会解析这个字串，从指定的仓库中进行拉取
+
+
+==========================================================================================================
+11：27分
+	开始做centos的Ogr环境配置
+	问题：××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××8
+		docker image内部如何获得外部的资源，源码，安装包
+		image的Ip和外部是如何映射的
+
+============================================================================================================
+1.首先安装proj4.8
+	在docker image中的/home/hanchun/tmp目录下
+	$ curl -O http://download.osgeo.org/proj/proj-4.8.0.tar.gz
+	$ tar xvfz proj-4.8.0.tar.gz
+	$ cd proj-4.8.0
+	$ ./configure
+	$ make
+		报错，make command not found
+		措施：yum -y install gcc automake autoconf libtool make
+		
+			
+	$ sudo make install
+		ls /usr/local/lib/libproj*====》能够看到5个proj相关的文件
+	
+===================================================================================================
+安装Gdal
+	参考命令：./configure --with-oci-include=/home/pcorti/software/oracle/inshc/oci/instant_11_2/sdk/include --with-oci-lib=/home/hc/oci/instantclient_11_2  --with-static-proj4=/usr/local --with-java=/usr/lib/java/jdk1.7.0_71 |grep OCI
+	
+	gdal下载出现问题
+		curl -O无法下载下来
+		内部image能够ping通外部的物理机器
+		考虑使用scp
+		安装openssh-client
+			命令：yum install openssh-clients 
+	重新运行curl -O http://download.osgeo.org/gdal/2.0.0/gdal-2.0.0.tar.gz
+	tar xvfz gdal-2.0.0.tar.gz
+	
+	./configure之后，能够看到OCI=no
+	centos裸机自带rpm
+==========================================================================================================
+	现在该怎么做？
+		1.在CentOS的裸机上配置具有OCI支持的GDAL.OGR
+		2.在CentOS逻辑配置OCI对server的监听
+		3.导出shapeFile的命令行工具
+===========================================================================================================
+下载JDK
+	curl -O 不能奏效
+	scp设置也比较麻烦
+	sudo docker run -it -v /home/hc/docker-work/work:/work 172.16.1.41:5000/library/centos:7.2.1511 bash
+	使用目录挂载方式进行通讯，绕开scp，但过后必须解决这个问题
+=======================================================================================================
+安装JDK
+	docker run -d -it -v work:/work 172.16.1.41:5000/library/centos:7.2.1511 bash
+	
+==========================================================================================================
+据我会议
+	OCI的安装是需要下载3个zip包，解压到同一个目录之后，建立2个软链接，再对环境变量进行配置
+	因此，直接复制instant文件夹,再添加环境变量
+	
+	运行sqlplus，报出error
+		error while loading shared libraries: libaio.so.1: cannot open shared object file: No such file or directory
+	yum install libaio
+		解决
+	sqlplus
+		成功
+=======================================================================================================
+	./configure --with-oci-include=/home/hanchun/instant_11_2/sdk/include --with-oci-lib=/home/hanchun/instantclient_11_2  --with-static-proj4=/usr/local --with-java=/usr/lib/java/jdk1.7.0_71 |grep instant
+	报出headers not found
+	但是include文件夹下明明是有所有.h文件的，这是为什么？
+	是我的sqlplus安装的不对么
+	可是我本地起sqlplus是可以成功的啊
+====================================================================
+	解决了！！！
+	/etc/profile/的环境变量是不够用的，必须要在～/.bashrc中也配置变量才行
+	~/.bashrc
+		export JAVA_HOME=/usr/lib/java/jdk1.8.0_181/
+		export JRE_HOME=${JAVA_HOME}/jre
+		export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib:
+	
+		export ORACLE_HOME=/home/hanchun/instantclient_11_2
+		export PATH=${JAVA_HOME}/bin:${ORACLE_HOME}:${PATH}
+	export LD_LIBRARY_PATH=/usr/local/lib:/opt/gdal-swig/:${ORACLE_HOME}
+
+===========================================================================================
+make时报错
+	could not read symbols: Bad value
+	image中的gcc版本4.8，主机版本5.4
+	考虑升级gcc
+
+===========================================================================================
+另，能否绕开编译其版本的问题
+直接拷贝gdal已经配置好的文件夹？
+将物理机的拷贝到hanchun/work/gdal-2.0.0-new下
+
+无法成功，make的结果依赖于环境
+===========================================
+解决编译器版本问题，设法将gcc升级到5.4.0
+
+1.curl -O  http://ftp.gnu.org/gnu/gcc/gcc-5.4.0/gcc-5.4.0.tar.bz2
+	下载gcc5.4
+2.tar -jxvf gcc-5.4.0.tar.bz2
+	此处解压报出tar (child): bzip2: Cannot exec: No such file or directory
+	需要 yum -y install bzip2
+3.cd gcc-6.1.0
+./contrib/download_prerequisites,运行这个脚本，如果缺失wget，就yum -y install wget即可
+	这个脚本能够自动下载需要安装的依赖
+
+4.mkdir gcc-build-6.1.0
+  cd gcc-build-6.1.0
+  ../configure -enable-checking=release -enable-languages=c,c++ -disable-multilib
+  make -j4
+
+=========================================================================================================
+gcc编译耗时很长
+	这段时间用于配置OCI
+18：05 make完成
+make install;//无异常
+=========================================================================================================
+教程上说需要重启
+	我选择开一个终端，再运行docker commit进行镜像备份
+	sudo docker commit 75b14abdd48e 172.16.1.41:5000/library/centos:7.2.1511-2
+		这条命令就是新建一个镜像
+	sudo docker run -it -v /home/hc/docker-work/work/:/work 172.16.1.41:5000/library/centos:7.2.1511-2 bash
+		再把新的image，run起来，就会发现gcc版本已经更新了
+
+	另再注：当使用sudo restart原来的镜像的时候，更改仍然在，而且挂载的目录也是保存的！可以的，这个很方便
+=============================================================================================================
+仍然回到最先那个镜像中
+cd gdal
+make 仍然报出旧有的错误
+尝试替换老版本的库
+不管用，保存这篇文章吧
+https://blog.csdn.net/qq_33233768/article/details/73274467
+===============================
+=================================================
+19:35 解决了！！！
+之前之所以 没有成功是因为没有clean!导致ld的时候，仍然使用之前的o文件进行链接
+措施如下
+make clean
+CFLAGS="-fPIC" ./configure --with-oci-include=/home/hanchun/instant_11_2/sdk/include --with-oci-lib=/home/hanchun/instantclient_11_2  --with-static-proj4=/usr/local --with-java=/usr/lib/java/jdk1.8.0_181/	
+
+再make,成功！！！
+	
+=========================================================
+越天
+
+
+
+
+
+
+
+
+

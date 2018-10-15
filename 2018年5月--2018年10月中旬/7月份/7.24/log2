@@ -1,0 +1,58 @@
+1.打jar以及调用的标准化操作
+
+2.linux service的建立
+
+3.docker的镜像导出
+
+================================================================================
+
+第一部分：不依赖任何外部jar
+1.Idea导出jar包（不以来外部jar),(project setting+Build/Build Artifact)
+	直接以java -jar ***.jar
+		运行即可
+	注意，这里的META-INF/MANIFEST.MF中的Main-Class可以直接指定入口的Main
+
+第二部分：依赖外部Gson.jar
+	打包过程没有问题
+	但运行时报出ClassNotFoundException Exception
+	解决办法
+	1.使用BootStrap ClassLoader来运行
+		java -Xbootclasspath/a:/home/hc/gson/gson-2.1.jar -jar MyComponent.jar
+
+	2.将依赖的jar包加入到${JAVA_HOME}/lib/ext下面，Extension ClassLoader会自动加载
+		但这个方式实在是比较过分
+
+	3.再MANIFEST.MF中配置ClassPath
+		Class-Path: /home/hc/gson/gson-2.1.jar
+		这种方式也能生效，而且比较良好
+
+	但是以上这些导出jar+配置的方式，并不够良好
+		应该探索直接导出带依赖的jar包
+
+	关键是ProjectSetting==>Artifacts==>+===>from modules with dependencis
+		这条路打出来的jar包就是自带依赖的
+	
+	注意多个jar包是可以依赖同一个Manifest.MF文件的
+
+第三部分：命令行打jar包
+	1.没有外部依赖的
+		javac Hello.java;//编译
+		jar cvfm hello.jar manifest.mf Hello.class;//这里的manifest.mf需要手动创建
+		java -jar hello.jar;//运行jar包
+
+	2.需要外部依赖的，依赖gson.Gson
+		javac -cp /home/hc/gson/gson-2.1.jar Hello.java
+		java -Xbootclasspath/a:/home/hc/gson/gson-2.1.jar hc.Hello;//注意，此处若是使用-cp,会发生找不到主类的错误
+	
+	
+	3.Java打包之后，
+		jar cvfm hello.jar manifest.mf Hello.class
+		java -jar hello.jar
+		报错 错误: 找不到或无法加载主类 Hello
+		暂时搁置
+
+第四部分：Maven的打包操作
+	暂时搁置
+
+		
+

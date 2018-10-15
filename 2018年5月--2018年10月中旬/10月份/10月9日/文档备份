@@ -1,0 +1,275 @@
+# Transwarp Article Similartiry
+
+------
+## 项目背景
+用户的使用场景要点如下：
+1.10万篇政府工作文档，这些文档相互之间的重复成分比较多，尤其是结构重复比较明显
+2.用户的需求是，在3～5秒内找出与目标文档最相似的top k篇其他文档，并且对于相似度越高的文档，相应的分数应该也越高
+
+
+## 需求分析
+首先必须明确的是，用户的需求中，对于“相似”这个概念的定位是什么。
+通过肉眼观察这些政府工作文档和相关人员的反馈中，可以发现，这里的“相似”有两层含义。
+第一，字符串的重复。
+这里的“字符串”，可以是句子，也可以词语。
+第二，是字符串相对位置的相近。
+字符串重复很容易理解，而相对位置相近，这里需要明确一下，如果一篇doc中的内容是A2B3C,另一篇doc中的内容是A4B6dddC,那么在这两篇文档中，A,B,C这三个Token的相对位置就是一致的，那么在用户的需求理，这两篇文档就是相对位置详尽。
+综上可得，用户的需求是“保序重复”，也就是说，不仅要字符串重复，字符串之间的相对顺序越是一致，那么相似度越高。
+
+## 设计
+1.分词器设计
+  对于“字符串”这个概念的理解中，长度的弹性很重要，词语和句子，这两种不同长度的单元计量对于不同的场景而言有各自不同的效用。比如，在一些类型很突出的文章中，以句子进行划分，将会得到良好的效果，因为可重复的句子较多，而且句子的重复更有标识别性。而对于类型不突出的文章集合，句子分词的粒度太大，匹配率较低，这就应该改用更细粒度的分词
+2.Query的设计
+  由于用户对速度有需求，要想在3～5秒内给出结果，那么传统的字符串公共子序列的匹配算法在速度上显然不可能满足需求，进一步可以认为，正排索引，对这种情况下都会造成较大的性能压力。因此，考虑基于Lucene的相关Query来完成检索功能
+
+## 实现
+### 1.关键组件
+SentenceAnalyzer
+这是一个按照句子进行分词的分词器，分词依据是各种标点符号，逗号，句号，冒号
+MoreLikeThisInOrderQuery
+实现“相对重复”这一功能的Query,实现的思想有点类似于Lucene的MoreLikeThisQuery，但是核心逻辑完全不同
+
+### 2. Sentence_Analyzer实现
+2.1 isTokenChar()的实现
+    Senence_Analyzer的第一个实现要点是对CharTokenizer中isTokenChar()的实现，这个方法是判断字符是否符合Token标准的判断方法，那么将相应的逗号，句号，分号，空格，换行符等标点字符对应的编号在这里进行判断
+#### 
+```java
+    @Override
+    protected boolean isTokenChar(int i) {
+      return !(i==9||i==10||i==32||i==44||i==65292
+      ||i==12290||i==59||i==58
+      ||i==65306||i==65307||i==63||i==65311);
+    }
+```
+2.2 Token有效性的检查
+    Sentence_Analyzer的第二个要点是对Token有效性的检查，也就是，太短，实词太少的句子,比如，“你好么”，“2017年6月”，“这个没有用”，这些没有实际意义的句子，不应该作为检索依据，这些句子，应该在分词这一层就过滤掉。当然，考虑到用户的不同使用场景，是否进行过滤由通过参数设置，由用户决定。
+注意，一般对于句子的过滤标准是动词+名词+形容词数量超过3个，实词长度之和超过总长度的50%。这里，对于句子的分词和词性判断，使用Hanlp语言包的相关API
+
+####Sentence_Analyzer的check()实现 
+```java
+@Override
+    public boolean check(String s) {
+        if(useValidCheck)
+            return SentenceUtil.isValidSentence(s);
+        else
+            return true;
+    }
+```
+####SentenceUtil的isValidSentence()实现
+```java
+public static boolean isValidSentence(String sentence){
+        sentence=sentence.trim();
+        List<Term> list=HanLP.segment(sentence);
+
+        int all_char_length=0;
+        int valid_char_length=0;
+        int valid_count=0;
+
+        for(Term t:list) {
+            all_char_length+=t.word.length();
+            if (CoreStopWordDictionary.shouldInclude(t)) {
+                valid_count++;
+                valid_char_length+=t.word.length();
+            }
+        }
+
+        double valid_percent=(valid_char_length*1.0)/(all_char_length*1.0);
+        if(valid_count>=v_count&&valid_percent>=v_percent){
+            return true;
+        }
+        return false;
+    }
+```
+### 3. MoreLikeThisInOrderQuery实现
+MoreLikeThisInOrderQuery的整体思路，就是对一篇文档进行分词（句），然后对TokenList进行依次地建出若干个SpanNearQuery，再将这若干个SpanNearQuery组成一个BooleanQuery,从而进入Lucene的Search流程。
+#### MoreLikeThisInOrderQuery的createQuery()实现
+```java
+ private Query createQuery(String fieldName,String fieldVal) {
+            TokenStream tokenStream = analyzer.tokenStream(fieldName, fieldVal);
+
+            SpanTermQuery pre_stq = null;
+
+            BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
+
+            int count = 0;
+            try {
+                tokenStream.reset();
+                CharTermAttribute termAtt = tokenStream.addAttribute(CharTermAttribute.class);
+                while (tokenStream.incrementToken()) {
+                    String token = termAtt.toString();
+                    if (count == 0) {
+                        count++;
+                        pre_stq = new SpanTermQuery(new Term(fieldName, token));
+                        continue;
+                    }
+                    count++;
+                    SpanTermQuery current_stq = new SpanTermQuery(new Term(fieldName, token));
+                    SpanNearQuery snq = new SpanNearQuery(new SpanQuery[]{pre_stq, current_stq}, slop, true);
+
+                    queryBuilder.add(snq, BooleanClause.Occur.SHOULD);
+                    pre_stq = current_stq;
+                }
+                tokenStream.end();
+                if (count == 1) {//输入的检索表达式只有一个句子,则不需要保序，直接使用TermQuery匹配即可
+                    queryBuilder.add(new TermQuery(new Term(fieldName, pre_stq.getTerm().text())), BooleanClause.Occur.SHOULD);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    tokenStream.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            return queryBuilder.build();
+
+    }
+```
+
+
+### 4. 高效绘制 [流程图](https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown#7-流程图)
+
+```flow
+st=>start: Start
+op=>operation: Your Operation
+cond=>condition: Yes or No?
+e=>end
+
+st->op->cond
+cond(yes)->e
+cond(no)->op
+```
+
+### 5. 高效绘制 [序列图](https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown#8-序列图)
+
+```seq
+Alice->Bob: Hello Bob, how are you?
+Note right of Bob: Bob thinks
+Bob-->Alice: I am good thanks!
+```
+
+### 6. 高效绘制 [甘特图](https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown#9-甘特图)
+
+```gantt
+    title 项目开发流程
+    section 项目确定
+        需求分析       :a1, 2016-06-22, 3d
+        可行性报告     :after a1, 5d
+        概念验证       : 5d
+    section 项目实施
+        概要设计      :2016-07-05  , 5d
+        详细设计      :2016-07-08, 10d
+        编码          :2016-07-15, 10d
+        测试          :2016-07-22, 5d
+    section 发布验收
+        发布: 2d
+        验收: 3d
+```
+
+### 7. 绘制表格
+
+| 项目        | 价格   |  数量  |
+| --------   | -----:  | :----:  |
+| 计算机     | \$1600 |   5     |
+| 手机        |   \$12   |   12   |
+| 管线        |    \$1    |  234  |
+
+### 8. 更详细语法说明
+
+想要查看更详细的语法说明，可以参考我们准备的 [Cmd Markdown 简明语法手册][1]，进阶用户可以参考 [Cmd Markdown 高阶语法手册][2] 了解更多高级功能。
+
+总而言之，不同于其它 *所见即所得* 的编辑器：你只需使用键盘专注于书写文本内容，就可以生成印刷级的排版格式，省却在键盘和工具栏之间来回切换，调整内容和格式的麻烦。**Markdown 在流畅的书写和印刷级的阅读体验之间找到了平衡。** 目前它已经成为世界上最大的技术分享网站 GitHub 和 技术问答网站 StackOverFlow 的御用书写格式。
+
+---
+
+## 什么是 Cmd Markdown
+
+您可以使用很多工具书写 Markdown，但是 Cmd Markdown 是这个星球上我们已知的、最好的 Markdown 工具——没有之一 ：）因为深信文字的力量，所以我们和你一样，对流畅书写，分享思想和知识，以及阅读体验有极致的追求，我们把对于这些诉求的回应整合在 Cmd Markdown，并且一次，两次，三次，乃至无数次地提升这个工具的体验，最终将它演化成一个 **编辑/发布/阅读** Markdown 的在线平台——您可以在任何地方，任何系统/设备上管理这里的文字。
+
+### 1. 实时同步预览
+
+我们将 Cmd Markdown 的主界面一分为二，左边为**编辑区**，右边为**预览区**，在编辑区的操作会实时地渲染到预览区方便查看最终的版面效果，并且如果你在其中一个区拖动滚动条，我们有一个巧妙的算法把另一个区的滚动条同步到等价的位置，超酷！
+
+### 2. 编辑工具栏
+
+也许您还是一个 Markdown 语法的新手，在您完全熟悉它之前，我们在 **编辑区** 的顶部放置了一个如下图所示的工具栏，您可以使用鼠标在工具栏上调整格式，不过我们仍旧鼓励你使用键盘标记格式，提高书写的流畅度。
+
+![tool-editor](https://www.zybuluo.com/static/img/toolbar-editor.png)
+
+### 3. 编辑模式
+
+完全心无旁骛的方式编辑文字：点击 **编辑工具栏** 最右侧的拉伸按钮或者按下 `Ctrl + M`，将 Cmd Markdown 切换到独立的编辑模式，这是一个极度简洁的写作环境，所有可能会引起分心的元素都已经被挪除，超清爽！
+
+### 4. 实时的云端文稿
+
+为了保障数据安全，Cmd Markdown 会将您每一次击键的内容保存至云端，同时在 **编辑工具栏** 的最右侧提示 `已保存` 的字样。无需担心浏览器崩溃，机器掉电或者地震，海啸——在编辑的过程中随时关闭浏览器或者机器，下一次回到 Cmd Markdown 的时候继续写作。
+
+### 5. 离线模式
+
+在网络环境不稳定的情况下记录文字一样很安全！在您写作的时候，如果电脑突然失去网络连接，Cmd Markdown 会智能切换至离线模式，将您后续键入的文字保存在本地，直到网络恢复再将他们传送至云端，即使在网络恢复前关闭浏览器或者电脑，一样没有问题，等到下次开启 Cmd Markdown 的时候，她会提醒您将离线保存的文字传送至云端。简而言之，我们尽最大的努力保障您文字的安全。
+
+### 6. 管理工具栏
+
+为了便于管理您的文稿，在 **预览区** 的顶部放置了如下所示的 **管理工具栏**：
+
+![tool-manager](https://www.zybuluo.com/static/img/toolbar-manager.jpg)
+
+通过管理工具栏可以：
+
+<i class="icon-share"></i> 发布：将当前的文稿生成固定链接，在网络上发布，分享
+<i class="icon-file"></i> 新建：开始撰写一篇新的文稿
+<i class="icon-trash"></i> 删除：删除当前的文稿
+<i class="icon-cloud"></i> 导出：将当前的文稿转化为 Markdown 文本或者 Html 格式，并导出到本地
+<i class="icon-reorder"></i> 列表：所有新增和过往的文稿都可以在这里查看、操作
+<i class="icon-pencil"></i> 模式：切换 普通/Vim/Emacs 编辑模式
+
+### 7. 阅读工具栏
+
+![tool-manager](https://www.zybuluo.com/static/img/toolbar-reader.jpg)
+
+通过 **预览区** 右上角的 **阅读工具栏**，可以查看当前文稿的目录并增强阅读体验。
+
+工具栏上的五个图标依次为：
+
+<i class="icon-list"></i> 目录：快速导航当前文稿的目录结构以跳转到感兴趣的段落
+<i class="icon-chevron-sign-left"></i> 视图：互换左边编辑区和右边预览区的位置
+<i class="icon-adjust"></i> 主题：内置了黑白两种模式的主题，试试 **黑色主题**，超炫！
+<i class="icon-desktop"></i> 阅读：心无旁骛的阅读模式提供超一流的阅读体验
+<i class="icon-fullscreen"></i> 全屏：简洁，简洁，再简洁，一个完全沉浸式的写作和阅读环境
+
+### 8. 阅读模式
+
+在 **阅读工具栏** 点击 <i class="icon-desktop"></i> 或者按下 `Ctrl+Alt+M` 随即进入独立的阅读模式界面，我们在版面渲染上的每一个细节：字体，字号，行间距，前背景色都倾注了大量的时间，努力提升阅读的体验和品质。
+
+### 9. 标签、分类和搜索
+
+在编辑区任意行首位置输入以下格式的文字可以标签当前文档：
+
+标签： 未分类
+
+标签以后的文稿在【文件列表】（Ctrl+Alt+F）里会按照标签分类，用户可以同时使用键盘或者鼠标浏览查看，或者在【文件列表】的搜索文本框内搜索标题关键字过滤文稿，如下图所示：
+
+![file-list](https://www.zybuluo.com/static/img/file-list.png)
+
+### 10. 文稿发布和分享
+
+在您使用 Cmd Markdown 记录，创作，整理，阅读文稿的同时，我们不仅希望它是一个有力的工具，更希望您的思想和知识通过这个平台，连同优质的阅读体验，将他们分享给有相同志趣的人，进而鼓励更多的人来到这里记录分享他们的思想和知识，尝试点击 <i class="icon-share"></i> (Ctrl+Alt+P) 发布这份文档给好友吧！
+
+------
+
+再一次感谢您花费时间阅读这份欢迎稿，点击 <i class="icon-file"></i> (Ctrl+Alt+N) 开始撰写新的文稿吧！祝您在这里记录、阅读、分享愉快！
+
+作者 [@ghosert][3]     
+2016 年 07月 07日    
+
+[^LaTeX]: 支持 **LaTeX** 编辑显示支持，例如：$\sum_{i=1}^n a_i=0$， 访问 [MathJax][4] 参考更多使用方法。
+
+[^code]: 代码高亮功能支持包括 Java, Python, JavaScript 在内的，**四十一**种主流编程语言。
+
+[1]: https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown
+[2]: https://www.zybuluo.com/mdeditor?url=https://www.zybuluo.com/static/editor/md-help.markdown#cmd-markdown-高阶语法手册
+[3]: http://weibo.com/ghosert
+[4]: http://meta.math.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference
+
+

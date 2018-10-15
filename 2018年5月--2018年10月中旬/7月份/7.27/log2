@@ -1,0 +1,40 @@
+shape file命令行工具编写
+
+OracleSpatial对于Layer是怎么处理的？
+
+这个工具里，怎么处理？
+=========================================
+尝试打包为命令行工具，本地运行
+用Idea进行打包为Gdal_Shiyan.jar
+本地运行OK
+镜像运行OK
+==============================================
+
+
+kubectl get pods |grep hdfs
+
+kubectl exec -it hadoop-hdfs-journalnode-hdfs1-679547775-rlx17 bash
+
+sudo -u hdfs hdfs dfs -ls /inceptor5/user/hive/warehouse/db1.db/hive/db1.table1@shapedrive.stargate
+sudo -u hdfs hdfs dfs -put /tmp/hcshape-1-10.*  /inceptor5/user/hive/warehouse/db1.db/hive/db1.table1@shapedrive.stargate
+
+==================================================
+Oracle的rownum是对查询返回结果的一个伪字段
+区间问题，仍需解决，暂时搁置
+=========================================================
+
+
+19:15
+	Inceptor驱动的问题，需要解决
+	
+20：07
+	shapeFile文件导入后，非地理列缺失的问题
+
+==========================================================
+
+21：25 WKT代码编写完成，未测试
+	Inceptor的驱动jar，放在/home/hc/my-jar里面
+
+
+
+

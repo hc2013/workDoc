@@ -1,0 +1,9 @@
+git log --graph;//图形化显示git log
+
+git rebase -i [commitID];//针对版本变基
+=================================================================
+git diff [commitId] [commitId] > patch
+git apply --reject patch
+
+====================================================================
+git rebase --abort://中止rebase

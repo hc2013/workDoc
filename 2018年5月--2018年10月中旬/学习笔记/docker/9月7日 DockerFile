@@ -1,0 +1,33 @@
+DockerFile
+	From指定基础镜像
+	MAINTAINER指定维护者
+	RUN 命令后面是对image内部的执行命令，如果是对同一层的操作，最好用&&将这些命令都并列起来，否则会造成每个RUN命令都产生一层的
+		臃肿局面
+
+	COPY命令是将物理机上的文件拷贝到image中
+		每个COPY命令都会产生一个intermediate container ****
+		目前没有找到类似与号并列的方式
+
+	docker run -e OBJECT_VAL=boy hello sh  /usr/lib/transwarp/scripts/start.sh
+	
+		这里的-e是设置image 中的环境变量
+
+		而-v /home/hc/docker-work/train/train09-07:/etc/hello/conf
+			则是将物理机的目录挂载到对应的image目录上
+
+	docker run -it 172.16.1.41:5000/zywei/hello:v1 bash
+		使用这种方式把image创建出一个container，进入交互模式，并且进入这个container内部
+
+	docker cp ./start.sh wonderful_pike:/usr/lib/tranwarp/scripts
+		将start.sh复制到容器中的目录里
+
+	docker run --mount type=bind,source=/home/lihuijuan/Transwarp/docker_task2/vol,target=/etc/hello/conf1 -it 172.16.1.41:5000/lhj/hello1:v1 bash
+
+	这里的docker run --mount 一样可以实现挂载功能 -v
+
+	docker commit 747602f8aaf9 172.16.1.41:5000/lhj/hello1:v1
+
+		docker commit [containerID] [image_name] 
+
+
+	

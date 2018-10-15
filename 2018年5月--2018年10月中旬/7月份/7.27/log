@@ -1,0 +1,137 @@
+8：56	接昨天的image环境配置
+
+gdal,make install
+
+================================
+ogr2ogr运行，出现选项
+ogr2ogr --formats，出现OCI选项
+===================================
+下一步：配置swig
+cd gdal-2.0.0/swig/java
+修改java.opt中的JAVA_HOME选项
+make
+报错：swig:command not found
+原因：swig没有安装
+====================================
+安装swig
+从物理机上cp swig3.0的安装包
+解压 
+./configure --prefix=/home/hanchun/swigtool
+报错：Cannot find pcre
+==============================
+首先尝试使用yum进行安装
+yum update
+搁置，还是用解压方式安装吧
+=======================
+解压到/home/hanchun/pcre-8.42
+./configure --enable-utf8
+make
+make install
+=========================
+回到swig 目录下
+./configure --prefix=/home/hanchun/swigtool
+make
+make install
+vi /etc/profile
+SWIG_PATH=/home/hanchun/swig-tool/bin
+PATH=$PATH:$SWIG_PATH
+
+验证安装：
+	cmd》swig -version
+
+==========================================
+回到gdal/swig/java
+make
+
+报错 make:ant Command not found
+=============================================
+安装ant
+下载apache-ant-1.10.5-bin.tar.gz
+解压
+修改/etc/profile
+设置ANT_HOME=/home/hanchun/apache-ant-1.10
+PATH:$ANT_HOME/bin
+=================================================
+再回到
+gdal/swig/java
+make
+BUILD SUCCESSFUL
+
+将当前路径下所有的.so文件cp到/opt/gdal-swig/
+在LD-LIBRARY_PATH中加入上面这个路径
+
+=============================================
+在三个路径下
+/usr/local/lib:/opt/gdal-swig/:/home/hanchun/instantclient_11_2
+都已经发现对应的lib文件了
+gdal/swig/java中也出现gdal.jar了
+===========================================================
+首先尝试image内部的thin链接
+sqlplus system/oracle@172.16.3.121
+	链接成功
+=======================================================
+突然想起来，image中的oracle是我直接诶拷贝过来的，配置都在
+而lsnrctl start（启动监听服务）和相对应lisener.ora都是再服务器端中的配置
+以及startup的insufficient privilege都是服务器端的配置
+因此oracle的配置比想象中的少挺多
+========================================================
+测试用ogr2ogr直转shapefile
+ogr2ogr -f "ESRI Shapefile" new_success.shp OCI:"system/oracle@xe:COLA_MARKETS"
+成功生成shp文件
+
+======================================================
+环境配置基本结束
+======================================================
+对已经配置好的docker镜像进行备份
+docker commit
+磁盘空间不足
+裸机的centos镜像只有234M
+配制完的镜像竟然有6.53G,唉
+考虑将iamge push上去
+
+有一个奇怪的地方是
+172.16.1.41:5000/library/centos：7.2.1511这个镜像是原始的拉取下来的镜像，也是环境配置好的镜像
+可这个镜像只有234M
+而172.16.1.41:5000/library/centos：7.2.1511-2只是一个中间状态的镜像
+为什么却有6.53G之大？
+
+解答：因为配置好的image没有进行commit保存，因此改变的只是container的大小，而没有改变image的大小
+而此时磁盘又出现不足的情况，应当先删除中间镜像7.2.1511-2
+
+docker rmi 938294112a25
+删除完成
+docker commit 75b14abdd48e 172.16.1.41:5000/library/centos:7.2.1511.configured
+镜像commit完成
+docker push 172.16.1.41:5000/library/centos:7.2.1511.configured
+push到远端
+11:47,push完成
+===============================================================================================
+解决ssh
+
+yum search ssh;//搜索ssh
+yum install openssh*;//安装ssh所有依赖包
+
+=============================================================================================
+不能以root用户登录
+ssh配置的核心思想，是将客户端的id_dsa.pub（公钥）copy到服务器端
+再在服务器端将id_dsa.pub追加到authorized_keys文件后面
+
+核心文件及文件夹prohibit-password
+/etc/ssh/sshd_config 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
